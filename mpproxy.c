@@ -29,6 +29,8 @@
 
 #define LEN_FIFO_MSG 1000
 
+#include "common.h"
+
 void writehelp(){
 	printf("Command syntax:\n");
 	printf(" -L                       list all sessions and subflows\n");
@@ -79,11 +81,10 @@ char *argv[];
 	if(argc > 1 && strcmp(argv[1], "start")==0) system("mptcp_proxy &");
 
 	//make down FIFO
-	char fifo_name_dwn[] = "/tmp/mptcp_cmd_down";	
-	mkfifo(fifo_name_dwn, (mode_t) 0666);
+	mkfifo(FIFO_NAME_DOWN, (mode_t) 0666);
 
 	//open fifo
-	int fd_down = open(fifo_name_dwn, O_WRONLY | O_NONBLOCK);
+	int fd_down = open(FIFO_NAME_DOWN, O_WRONLY | O_NONBLOCK);
 
 	//send data
 	int ret = write(fd_down, incmd, strlen(incmd));
@@ -95,11 +96,10 @@ char *argv[];
 
 
 	//make up FIFO
-	char fifo_name_up[] = "/tmp/mptcp_cmd_up";	
-	mkfifo(fifo_name_up, (mode_t) 0666);
+	mkfifo(FIFO_NAME_UP, (mode_t) 0666);
 
 	//open fifo
-	int fd_up = open(fifo_name_up, O_RDONLY | O_NONBLOCK);
+	int fd_up = open(FIFO_NAME_UP, O_RDONLY | O_NONBLOCK);
 	
 	 fd_set fds_test;
 	 fd_set fds_input;

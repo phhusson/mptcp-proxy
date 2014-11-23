@@ -19,11 +19,11 @@
 #include "sessman.h"
 #include "conman.h"
 
+#include "common.h"
+
 //this is boolean
 int con_man_active = 0;
 static char fifo_return_header[] = "mptcp_proxy returns: ";
-static char fifo_name_dwn[] = "/tmp/mptcp_cmd_down";	
-static char fifo_name_up[] = "/tmp/mptcp_cmd_up";
 
 struct con_man_command cmcmd;
 
@@ -39,11 +39,11 @@ uint16_t toss_port_number(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void init_fifos(){
 
-	mkfifo(fifo_name_dwn, (mode_t) 0666);
-	mkfifo(fifo_name_up, (mode_t) 0666);
+	mkfifo(FIFO_NAME_DOWN, (mode_t) 0666);
+	mkfifo(FIFO_NAME_UP, (mode_t) 0666);
 
-	fd_fifo_dwn = open(fifo_name_dwn, O_RDONLY | O_NONBLOCK);
-	fd_fifo_up = open(fifo_name_up, O_WRONLY | O_NONBLOCK);
+	fd_fifo_dwn = open(FIFO_NAME_DOWN, O_RDONLY | O_NONBLOCK);
+	fd_fifo_up = open(FIFO_NAME_UP, O_WRONLY | O_NONBLOCK);
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -192,7 +192,7 @@ void check_fifo_msg(){
 
 	buf_in[ret] = '\0';	
 	close(fd_fifo_dwn);
-	fd_fifo_dwn = open(fifo_name_dwn, O_RDONLY | O_NONBLOCK);
+	fd_fifo_dwn = open(FIFO_NAME_DOWN, O_RDONLY | O_NONBLOCK);
 
 	//parse fifo command
 	char buf_out[LEN_FIFO_RSP + 1];
@@ -200,7 +200,7 @@ void check_fifo_msg(){
 	int success = parse_fifo_command(buf_in, ret, buf_out);
 
 	//send data up
-	fd_fifo_up = open(fifo_name_up, O_WRONLY | O_NONBLOCK);
+	fd_fifo_up = open(FIFO_NAME_UP, O_WRONLY | O_NONBLOCK);
 	ret = write(fd_fifo_up, buf_out, strlen(buf_out));
 	if(ret < -1){
 		sprintf(msg_buf, "check_fifo_msg: writing to pipe failed");
