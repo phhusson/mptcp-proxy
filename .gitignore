@@ -1,0 +1,4 @@
+*.o
+.*
+mpproxy
+mptcp_proxy
