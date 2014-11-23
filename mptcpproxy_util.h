@@ -139,18 +139,18 @@
 //extern char message[500];
 
 //netlink socket descriptor to catch interface changes
-size_t nl_sd;
+int nl_sd;
 char nl_buf[4096];
 struct nlmsghdr *nlh;
 int terminate_loop;
 char msg_buf[MAX_MSG_LENGTH+1];
 
 //fifo sds
-size_t fd_fifo_dwn;
-size_t fd_fifo_up;
+int fd_fifo_dwn;
+int fd_fifo_up;
 
 //socket descriptor for raw socket and buffer fo raw socket
-extern size_t raw_sd;
+extern int raw_sd;
 extern unsigned char raw_buf[400] __attribute__ ((aligned));// = malloc( 60 * sizeof(unsigned char));
 
 
@@ -243,7 +243,6 @@ extern struct dss_option dssopt_out;//defined in sessman
 
 
 struct print_msg{
-
 	uint32_t index;
 	struct timeval now;
 	char  msg[MAX_MSG_LENGTH];
@@ -252,19 +251,17 @@ struct print_msg{
 
 //data struct to print msg
 struct print_msg_array{
-
 	FILE *file_msg;	
 	struct timeval start;
 	struct print_msg **prt_msgs;
 	uint32_t nmb_msg;//total number of messages
-	int curr_msg_index;//curr message index in array
+	uint32_t curr_msg_index;//curr message index in array
 };
 extern struct print_msg_array prt_msg_array;
 
 
 //these data will be stored for every packet if PRINT_FILE == 1
 struct print_line{
-
 	uint32_t id;
 	size_t hook;
 	struct timeval now;
@@ -287,7 +284,6 @@ struct print_line{
 
 	unsigned char nb_sack_out;
 	uint32_t sack_out[8];
-	
 };
 
 
@@ -295,7 +291,6 @@ struct print_line{
 
 //these data will be stored for every packet if PRINT_TABLE == 1
 struct print_table{
-
 	int nb_entries;
 
 	uint32_t id;
@@ -308,7 +303,6 @@ struct print_table{
 
 //data struct to print data
 struct print_data{
-
 	int do_print;
 	FILE *file1;	
 	FILE *file3;
@@ -325,7 +319,6 @@ struct print_data{
 extern struct print_data prt_data;
 
 struct packet_data{
-
 	uint32_t id;
 
 	size_t hook;
@@ -439,7 +432,6 @@ struct map_entry{
 };
 
 struct map_table{
-
 	int size;	
 	struct map_entry *top;
 	struct map_entry *bot;
@@ -453,7 +445,6 @@ struct map_table{
 struct session;
 
 struct subflow{
-
 	struct fourtuple ft;//key
 	size_t index;//index in subflow table: do we need this?
 
@@ -525,7 +516,6 @@ struct addrid{
 };
 
 struct session{
-
 	struct fourtuple ft;//key, this is the ft used by the TCP control block
 
 	size_t index;//index in session table: do we need this?
@@ -607,7 +597,6 @@ extern struct session *sess_hash;//defined in sessman
 //combined session parms: struct token + fourtuple
 // needed to find fourtuple to token
 struct session_parms{
-	
 	uint32_t token;
 	struct fourtuple ft;
 	UT_hash_handle hh;
@@ -653,7 +642,6 @@ extern struct con_man_command cmcmd;//defined in conman
 //tp_events are defined in tp_heap.h
 //events handled in sflman
 struct rex_event_data{
-
 	int count;
 	int tcp_state;
 	struct fourtuple ft;
@@ -666,7 +654,6 @@ struct rex_event_data{
 //tp_events are defined in tp_heap.h
 //events handled in sessman
 struct sess_close_event_data{
-
 	struct fourtuple ft;//session ft
 };
 
@@ -674,7 +661,6 @@ struct sess_close_event_data{
 //tp_events are defined in tp_heap.h
 //events handled in sflman, ft belongs to subflow
 struct sfl_close_event_data{
-
 	struct fourtuple ft;//session ft
 };
 
@@ -683,7 +669,6 @@ struct sfl_close_event_data{
 //tp_events are defined in tp_heap.h
 //events handled in sessman
 struct break_event_data{
-
 	struct fourtuple ft;//session ft
 };
 
@@ -692,7 +677,6 @@ struct break_event_data{
 //tp_events are defined in tp_heap.h
 //events handled in sflman
 struct prio_event_data{
-
 	struct fourtuple ft;//pointing to session
 	unsigned char addr_id_loc;//for REMOVE_ADDR
 	unsigned char count;
@@ -703,11 +687,7 @@ struct prio_event_data{
 //tp_events are defined in tp_heap.h
 //events handled in sessman
 struct remove_addr_event_data{
-
 	uint32_t ipaddr;//andrid to be removed
-	
-
-
 };
 
 
@@ -716,13 +696,13 @@ struct remove_addr_event_data{
 //sn smaller
 // returns 1 if a "<" b
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int sn_smaller(uint32_t a, uint32_t b);
+int sn_smaller(uint32_t a, uint32_t b);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //sn smaller_equal
 // returns 1 if a "<=" b
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int sn_smaller_equal(uint32_t a, uint32_t b);
+int sn_smaller_equal(uint32_t a, uint32_t b);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //translate SM_states
@@ -739,21 +719,21 @@ void translate_event_state(int event_nb, char *state_str);
 //handle_error
 // Prints out a string and exits
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void handle_error(char *message, int exit_flag);
+void handle_error(char *message, int exit_flag);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //print_buffer
 // Prints out a string and exits
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void print_buffer(unsigned char *buf, uint16_t len, int hex_flag);
+void print_buffer(unsigned char *buf, uint16_t len, int hex_flag);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //sprint_buffer
 // Prints buffer to string
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void sprint_buffer(unsigned char *buf_in, char *str_out, uint16_t len, int hex_flag);
+void sprint_buffer(unsigned char *buf_in, char *str_out, uint16_t len, int hex_flag);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void init_msg_data();
@@ -828,18 +808,18 @@ void print_sack(uint32_t *sack, unsigned char nb_sack);
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create_key: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline uint32_t get_rand();
+uint32_t get_rand();
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create_key: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void create_key(uint32_t *key);
+void create_key(uint32_t *key);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create IDSN: 32bit trunc of SHA1(key)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void create_idsn_token(uint32_t * const key, uint32_t *idsn, uint32_t *token);
+void create_idsn_token(uint32_t * const key, uint32_t *idsn, uint32_t *token);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create_mac: 20B mac of keyA + keyB, R_A + R_B
@@ -850,34 +830,34 @@ void create_mac(uint32_t *keyA, uint32_t *keyB, uint32_t rand_nmb_A, uint32_t ra
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create Token
 //++++++++++++++++++++++++++++++++++++++++++++++++
-extern inline uint32_t create_token(uint32_t idsn);
+uint32_t create_token(uint32_t idsn);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create ISSN (random number)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline uint32_t create_issn();
+uint32_t create_issn();
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: convert IP address from uint32_t to char
 //  IP address must be in host format
 //++++++++++++++++++++++++++++++++++++++++++++++++
-extern inline void printIPaddr(uint32_t ipaddr);
+extern void printIPaddr(uint32_t ipaddr);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: convert IP address from uint32_t to char
 //  IP address must be in host format
 //++++++++++++++++++++++++++++++++++++++++++++++++
-extern inline void sprintIPaddr(char* buf, uint32_t ipaddr);
+extern void sprintIPaddr(char* buf, uint32_t ipaddr);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: printFourtuple
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void printFourtuple(struct fourtuple *ft);
+void printFourtuple(struct fourtuple *ft);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: mirrorFourtuple: switches loc and rem
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void mirrorFourtuple(struct fourtuple *ft);
+void mirrorFourtuple(struct fourtuple *ft);
 
 
 
@@ -924,4 +904,4 @@ void del_pnt_pA(struct pntArray *pa, void *pnt);
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void clear_pA(struct  pntArray *pa);
 
-
+void sprintFourtuple(char* buf, struct fourtuple *ft);

@@ -18,7 +18,7 @@ struct tp_event;
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //SUFLOW: int subflow_completed(struct subflow *sfl)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int subflow_completed(struct subflow *sfl);
+int subflow_completed(struct subflow *sfl);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //SUFLOW: initiate_cand_subflow()
@@ -150,7 +150,6 @@ int handle_subflow_break(struct subflow *const sflx);
 //      overwrite=1: Overwrite entry if subflow already exists and return 0
 //++++++++++++++++++++++++++++++++++++++++++++++++
 extern struct subflow* create_subflow(struct fourtuple *ft1,
-		 struct session *sess,
 		 unsigned char addr_id_loc,
 		 unsigned char addr_id_rem,
 		 int tcp_state,
@@ -249,6 +248,6 @@ int check_sfl_teardown_timer(struct subflow *sfl);
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void execute_sfl_teardown(struct subflow *sfl)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int execute_sfl_teardown(struct subflow *sfl);
+void execute_sfl_teardown(struct subflow *sfl);
 
 

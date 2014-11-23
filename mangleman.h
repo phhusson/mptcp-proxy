@@ -18,7 +18,7 @@
 //Filter: set verdict
 //  sets verdict, data_update_flag and size_update_flag
 //++++++++++++++++++++++++++++++++++++++++++++++++
-extern inline void set_verdict(size_t verdict, size_t data_update, size_t size_update);
+extern void set_verdict(size_t verdict, size_t data_update, size_t size_update);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //handle_reset_output()

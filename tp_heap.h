@@ -24,9 +24,9 @@ struct HeapStruct {
 typedef struct HeapStruct *PriorityQueue;
 extern PriorityQueue PQ;
 
-inline int earlier(struct tp_event *ev1, struct tp_event *ev2);
+int earlier(struct tp_event *ev1, struct tp_event *ev2);
 
-inline int is_due(struct tp_event *ev, struct timeval *tm);
+int is_due(struct tp_event *ev, struct timeval *tm);
 
 PriorityQueue Initialize(int MaxElements);
 

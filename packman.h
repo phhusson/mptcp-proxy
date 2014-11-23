@@ -29,28 +29,28 @@ extern void create_packet(unsigned char *buf, uint16_t *plen,
 	uint16_t len_opt);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-//PACKMAN: send_raw_packet 
+//PACKMAN: send_raw_packet over IP
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst, uint16_t prt_dst);
+int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //SFLMAN: send_reset_fourtuple()
 // Sends sest on a certain fourtuple
 //++++++++++++++++++++++++++++++++++++++++++++++++
- int send_reset_fourtuple(struct fourtuple *ft, uint32_t seq_nb);
+int send_reset_fourtuple(struct fourtuple *ft, uint32_t seq_nb);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //PACKMAN: cache_packet_header: Buffers signaling packet for retransmission purposes
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void cache_packet_header();
+void cache_packet_header();
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //PACKMAN: retransmit_cached_packet_header:
 //   Copies packet buffered in session to new_buf
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void retransmit_cached_packet_header();
+void retransmit_cached_packet_header();
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -164,7 +164,7 @@ extern void create_new_packet(unsigned char *const tcp_opt_buf, uint16_t len);
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //PACKMAN: find  TP option: evaluates TP option array for some subkind
 //++++++++++++++++++++++++++++++++++++++++++++++++
-extern inline int find_MPsubkind(struct mptcp_option * const mptopt, size_t nb_options, const unsigned char subkind);
+extern int find_MPsubkind(struct mptcp_option * const mptopt, size_t nb_options, const unsigned char subkind);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -294,7 +294,7 @@ int find_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind);
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //find_offset_of_tcp_option(): searches for tcp option with certain kind and returns offset to beginning of option
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int find_offset_of_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind);
+int find_offset_of_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++

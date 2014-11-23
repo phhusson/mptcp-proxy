@@ -375,7 +375,7 @@ void print_entry(struct map_table *map) {
 		return;
 	}
 
-	printf("entry: sfl_id=%d, dsn=%lu, ssn_L=%lu, ssn_R=%lu, off=%lu, range=%lu\n",
+	printf("entry: sfl_id=%zu, dsn=%lu, ssn_L=%lu, ssn_R=%lu, off=%lu, range=%lu\n",
 		map->pnt1->sfl->index,
 		(long unsigned) map->pnt1->dsn, 
 		(long unsigned) map->pnt1->ssn, (long unsigned) map->pnt1->ssn + map->pnt1->range - 1,
@@ -434,7 +434,7 @@ int enter_dsn_packet(struct map_table *map, struct subflow *sfl, uint32_t dsn, u
  
 		//merge entry downwards
 		map->pnt1 = entry;
-		uint32_t sre, dre;
+		uint32_t sre = 0, dre = 0;
 
 		if(map->pnt1->next != NULL) { 
 			sre = map->pnt1->next->ssn + map->pnt1->next->range -1;//right edge ssn of next entry
@@ -750,12 +750,8 @@ void delete_below_ssn(struct map_table *map, uint32_t max_ssn) {
 
 	//delete bottom entries: right edge of entry is smaller than max_ssn
 	map->pnt1 = map->bot;
-	struct map_entry *temp;
-	while(map->pnt1 != NULL && sn_smaller(map->pnt1->ssn + map->pnt1->range-1, max_ssn)){
-
-		temp = map->pnt1;
+	while(map->pnt1 != NULL && sn_smaller(map->pnt1->ssn + map->pnt1->range-1, max_ssn))
 		delete_entry(map);
-	}		
 
 	map->pnt1 = map->bot;
 
@@ -780,13 +776,8 @@ void delete_below_dsn(struct map_table *map, uint32_t max_dsn) {
 
 	//delete bottom entries: right edge of entry is smaller than max_dsn
 	map->pnt1 = map->bot;
-	struct map_entry *temp;
-	while(map->pnt1 != NULL && sn_smaller(map->pnt1->dsn + map->pnt1->range-1, max_dsn)){
-
-		temp = map->pnt1;
+	while(map->pnt1 != NULL && sn_smaller(map->pnt1->dsn + map->pnt1->range-1, max_dsn))
 		delete_entry(map);
-
-	}		
 
 	map->pnt1 = map->bot;
 

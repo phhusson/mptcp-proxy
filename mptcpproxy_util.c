@@ -25,13 +25,13 @@ struct print_msg_array prt_msg_array;
 //sn smaller
 // returns 1 if a "<" b
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int sn_smaller(uint32_t a, uint32_t b) { return ((a-b) > (b-a));}
+int sn_smaller(uint32_t a, uint32_t b) { return ((a-b) > (b-a));}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //sn smaller_equal
 // returns 1 if a "<=" b
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int sn_smaller_equal(uint32_t a, uint32_t b){ return ((a-b) >= (b-a));}
+int sn_smaller_equal(uint32_t a, uint32_t b){ return ((a-b) >= (b-a));}
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -194,7 +194,6 @@ void terminate_msg_data(){
 
 	int i;
 	struct print_msg *prt;
-	double dtime;
 	if(prt_msg_array.curr_msg_index < prt_msg_array.nmb_msg) {//it has looped around yet
 		for(i=prt_msg_array.curr_msg_index; i<MAX_MSG_LINES;i++) {
 			prt = prt_msg_array.prt_msgs[i];
@@ -204,7 +203,7 @@ void terminate_msg_data(){
 		}
 	}
 
-	for(i=0; i<prt_msg_array.curr_msg_index;i++) {
+	for(unsigned i=0; i<prt_msg_array.curr_msg_index;i++) {
 		prt = prt_msg_array.prt_msgs[i];
 		double dtime = 1.0 * (prt->now.tv_sec - prt_msg_array.start.tv_sec) +  (prt->now.tv_usec - prt_msg_array.start.tv_usec)/1000000.0;
 	
@@ -370,16 +369,13 @@ void terminate_print_data() {
 	fprintf(prt_data.file3,"\tnb_sack_ssn \tLsack_ssn_1 \tRsack_ssn_1 \tLsack_ssn_2 \tRsack_ssn_2 \tLsack_ssn_3 \tRsack_ssn_3");
 	fprintf(prt_data.file3,"\tverdict\n");
 
-	int i;
-	struct print_line *prt;
-	double dtime;
-	for(i=0;i<prt_data.nmb_lines;i++) {
+	for(unsigned i=0;i<prt_data.nmb_lines;i++) {
 
 		struct print_line *prt = prt_data.print_line_array[i];
 		double dtime = 1.0 * (prt->now.tv_sec - prt_data.start.tv_sec) +  (prt->now.tv_usec - prt_data.start.tv_usec)/1000000.0;
 	
 		if(prt->hook == 1){
-			fprintf(prt_data.file1,"%lu\t%d\t%f\t%u\t%u", (long unsigned int) prt->id, prt->hook, dtime, prt->sess_id, prt->sfl_id);
+			fprintf(prt_data.file1,"%lu\t%zu\t%f\t%zu\t%zu", (long unsigned int) prt->id, prt->hook, dtime, prt->sess_id, prt->sfl_id);
 
 			fprintf(prt_data.file1,"\t%d\t%d\t%d\t%d\t%d\t%u",
 				prt->rex, (prt->flags)>>1 & 0x01,(prt->flags)>>4 & 0x01,(prt->flags) & 0x01,(prt->flags)>>2 & 0x01, prt->paylen);
@@ -399,7 +395,7 @@ void terminate_print_data() {
 
 		}
 		else{
-			fprintf(prt_data.file3,"%lu\t%d\t%f\t%u\t%u", (long unsigned int) prt->id, prt->hook, dtime, prt->sess_id, prt->sfl_id);
+			fprintf(prt_data.file3,"%lu\t%zu\t%f\t%zu\t%zu", (long unsigned int) prt->id, prt->hook, dtime, prt->sess_id, prt->sfl_id);
 
 			fprintf(prt_data.file3,"\t%d\t%d\t%d\t%d\t%d\t%u",
 				prt->rex, (prt->flags)>>1 & 0x01,(prt->flags)>>4 & 0x01,(prt->flags) & 0x01,(prt->flags)>>2 & 0x01, prt->paylen);
@@ -434,24 +430,23 @@ void terminate_print_data() {
 		fprintf(prt_data.file10,"id \thook \tsfl \n");
 		fprintf(prt_data.file30,"id \thook \tsfl \n");
 
-		int i,j;
-		for(i=0; i<prt_data.nmb_tables; i++) {
+		for(unsigned i=0; i<prt_data.nmb_tables; i++) {
 
 			struct print_table *prtt = prt_data.print_table_array[i];
 
 			if(prtt->hook == 1) {
-				fprintf(prt_data.file10,"%lu\t%d\t%u\t", (long unsigned int) prtt->id, prtt->hook, prtt->sfl_id);
+				fprintf(prt_data.file10,"%lu\t%zu\t%zu\t", (long unsigned int) prtt->id, prtt->hook, prtt->sfl_id);
 
-				for(j=0; j<prtt->nb_entries; j++) {
+				for(int j=0; j<prtt->nb_entries; j++) {
 					fprintf(prt_data.file10,"[%lu,%lu][%lu,%lu]\t", 
 					(long unsigned) prtt->dsn[j], (long unsigned) (prtt->dsn[j] + prtt->range[j] - 1),
 					(long unsigned) prtt->ssn[j], (long unsigned) (prtt->ssn[j] + prtt->range[j] - 1));
 				}					
 				fprintf(prt_data.file10,"\n");
 			} else{
-				fprintf(prt_data.file30,"%lu\t%d\t%u\t", (long unsigned int) prtt->id, prtt->hook, prtt->sfl_id);
+				fprintf(prt_data.file30,"%lu\t%zu\t%zu\t", (long unsigned int) prtt->id, prtt->hook, prtt->sfl_id);
 
-				for(j=0; j<prtt->nb_entries; j++){
+				for(int j=0; j<prtt->nb_entries; j++){
 					fprintf(prt_data.file30,"[%lu,%lu][%lu,%lu]\t", 
 					(long unsigned) prtt->dsn[j], (long unsigned) (prtt->dsn[j] + prtt->range[j] - 1),
 					(long unsigned) prtt->ssn[j], (long unsigned) (prtt->ssn[j] + prtt->range[j] - 1));
@@ -488,7 +483,7 @@ void print_sack(uint32_t *sack, unsigned char nb_sack) {
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: get_rand: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline uint32_t get_rand() {
+uint32_t get_rand() {
 	uint32_t nmb;
 	nmb = rand();
 	nmb += ( (rand()%2) <<31);
@@ -499,7 +494,7 @@ inline uint32_t get_rand() {
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create_key: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void create_key(uint32_t *key) {
+void create_key(uint32_t *key) {
 	*key = get_rand();
 	*(key + 1) = get_rand();
 	return;
@@ -509,11 +504,9 @@ inline void create_key(uint32_t *key) {
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create IDSN: 32bit trunc of SHA1(key)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void create_idsn_token(uint32_t * const key, uint32_t *idsn, uint32_t *token) {
-	struct sha1_ctx ctx;
+void create_idsn_token(uint32_t * const key, uint32_t *idsn, uint32_t *token) {
 	uint32_t resblock[5];
-	uint32_t *respnt = (uint32_t*) resblock;
-	respnt = (uint32_t *) sha1_buffer ( (const unsigned char *) key, 8, (unsigned char *) resblock);
+	sha1_buffer ( (const char *) key, 8, (unsigned char *) resblock);
 	*token = (resblock[0]);
 	*idsn = ntohl( *( resblock+4) );
 }
@@ -545,7 +538,7 @@ inline uint32_t create_token(uint32_t idsn) {
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create ISSN
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline uint32_t create_issn() {
+uint32_t create_issn() {
 	//since rand() only creates a positive long int, 
 	// it covers only 31 bits.
 	// therefore we add a random bit at the 32 position
@@ -591,7 +584,7 @@ inline void printFourtuple(struct fourtuple *ft) {
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: sprintFourtuple
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void sprintFourtuple(char* buf, struct fourtuple *ft) {
+void sprintFourtuple(char* buf, struct fourtuple *ft) {
 	char buf_loc[34];
 	char buf_rem[34];
 
@@ -605,7 +598,7 @@ inline void sprintFourtuple(char* buf, struct fourtuple *ft) {
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: mirrorFourtuple: switches loc and rem
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void mirrorFourtuple(struct fourtuple *ft) {
+void mirrorFourtuple(struct fourtuple *ft) {
 	uint32_t ip_buf = ft->ip_loc;
 	uint16_t prt_buf = ft->prt_loc;
 	ft->ip_loc = ft->ip_rem;
@@ -645,7 +638,7 @@ void add_pnt_pA(struct  pntArray *pa, void *pnt) {
 //util: write_index_pA: Writes to pnt to index in pntArray
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void write_pnt_pA(struct pntArray *pa, int index, void *pnt) {
-	if(index >= pa->number || index < 0) return;
+	if(index >= (int)pa->number || index < 0) return;
 	*(pa->pnts + index) = pnt;
 }
 
@@ -653,10 +646,9 @@ void write_pnt_pA(struct pntArray *pa, int index, void *pnt) {
 //util: del_index_pA: Deletes pnt to index in pntArray and puts NULL in the spot
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void del_index_pA(struct pntArray *pa, int index) {
-	if(index >= pa->number || index < 0) return;
+	if(index >= (int)pa->number || index < 0) return;
 
-	int i;
-	for(i = index; i< pa->number-1; i++){
+	for(unsigned i = index; i< pa->number-1; i++){
 		*(pa->pnts+i) = *(pa->pnts +i+1);
 	}
 	pa->number--;
@@ -668,7 +660,7 @@ void del_index_pA(struct pntArray *pa, int index) {
 // -1 if not found
 //++++++++++++++++++++++++++++++++++++++++++++++++
 int get_index_pA(struct  pntArray *pa, void *pnt) {
-	int i=0;
+	unsigned i=0;
 	while(i < pa->number && ( *(pa->pnts+i) != pnt) ) i++;
 
 	if( *(pa->pnts+i) != pnt) return -1;
@@ -681,7 +673,7 @@ int get_index_pA(struct  pntArray *pa, void *pnt) {
 // NULL if not found
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void* get_pnt_pA(struct  pntArray *pa, int index) {
-	if(index >= pa->number || index < 0) return NULL;
+	if(index >= (int)pa->number || index < 0) return NULL;
 
 	return *(pa->pnts+index);
 }

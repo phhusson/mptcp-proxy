@@ -29,7 +29,7 @@ void ssn_expand_entry(struct map_entry *entry, uint32_t ssn, uint32_t range);
 //map_entry: ssn_inside_entry
 //	return -1,0,1 if ssn is below, inside or above entry
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int ssn_inside_entry(struct map_entry *entry, uint32_t ssn);
+int ssn_inside_entry(struct map_entry *entry, uint32_t ssn);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -37,7 +37,7 @@ inline int ssn_inside_entry(struct map_entry *entry, uint32_t ssn);
 //	return -1,0,1 if x is below, inside or above entry
 //	flag = 0: ssn, else dsn
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int x_inside_entry(struct map_entry *entry, uint32_t xsn, int flag);
+int x_inside_entry(struct map_entry *entry, uint32_t xsn, int flag);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -45,7 +45,7 @@ inline int x_inside_entry(struct map_entry *entry, uint32_t xsn, int flag);
 //	return -1,0,1 if ssn is below, inside or above entry
 //	Inside means: its inside, or it touches and offset is the same
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int ssn_inside_touch_entry(struct map_entry *entry, uint32_t ssn, uint32_t dsn);
+int ssn_inside_touch_entry(struct map_entry *entry, uint32_t ssn, uint32_t dsn);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -53,7 +53,7 @@ inline int ssn_inside_touch_entry(struct map_entry *entry, uint32_t ssn, uint32_
 //	return -1,0,1 if dsn is below, inside or above entry
 //	Inside means: its inside, or it touches and offset is the same
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int dsn_inside_touch_entry(struct map_entry *entry, uint32_t ssn, uint32_t dsn);
+int dsn_inside_touch_entry(struct map_entry *entry, uint32_t ssn, uint32_t dsn);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -67,13 +67,13 @@ void dsn_expand_entry(struct map_entry *entry, uint32_t dsn, uint32_t range);
 //map_entry: dsn_inside_entry
 //	return -1,0,1 if dsn is below, inside or above entry
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int dsn_inside_entry(struct map_entry *entry, uint32_t dsn);
+int dsn_inside_entry(struct map_entry *entry, uint32_t dsn);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //map_entry: dsn_touch_entry
 //	return -1,1 if dsn is touching below or above. 0 otherwise
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int dsn_touch_entry(struct map_entry *entry, uint32_t dsn);
+int dsn_touch_entry(struct map_entry *entry, uint32_t dsn);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -81,7 +81,7 @@ inline int dsn_touch_entry(struct map_entry *entry, uint32_t dsn);
 //	returns 1 if prior entry is adjacent in ssn
 //	returns 0 if prior entry does not exist or if not adjacent in ssn
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int prior_adjacent_ssn(struct map_entry *entry);
+int prior_adjacent_ssn(struct map_entry *entry);
 
 
 //HERE COMES MAP TABLE
@@ -188,7 +188,7 @@ int project_sack_space(struct map_table *map, const int nb_sack_in, uint32_t *sa
 // 	should be used to add dsn packet on top of map in case left edge of packet > highest_DSN
 // 	If this condition does not apply, packet is a retransmission and the next following routines have to be used
 ///++++++++++++++++++++++++++++++++++++++++++++++++
-inline void enter_dsn_packet_on_top(struct map_table *map, struct subflow * const sfl, const uint32_t dsn, const uint32_t ssn, const uint32_t range);
+void enter_dsn_packet_on_top(struct map_table *map, struct subflow * const sfl, const uint32_t dsn, const uint32_t ssn, const uint32_t range);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++

@@ -76,7 +76,7 @@ void create_packet(unsigned char *buf, uint16_t *plen,
 //send_raw_packet 
 //ip_dst, prt_dst in network format
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst, uint16_t prt_dst) {
+int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst) {
 	//send packet on raw socket
 	struct sockaddr_in sin;	
 	sin.sin_family = AF_INET;
@@ -112,7 +112,7 @@ int send_reset_fourtuple(struct fourtuple *ft, uint32_t seq_nb) {
 		4);//opt len
 
 	//send packet
-	if(send_raw_packet(raw_sd, raw_buf,  pack_len, htonl(ft->ip_rem), htons(ft->prt_rem))<0)
+	if(send_raw_packet(raw_sd, raw_buf,  pack_len, htonl(ft->ip_rem))<0)
 		return 0;
 
 	return 1;
@@ -122,7 +122,7 @@ int send_reset_fourtuple(struct fourtuple *ft, uint32_t seq_nb) {
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //PACKMAN: cache_packet_header: Buffers signaling packet header for retransmission purposes
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void cache_packet_header(){
+void cache_packet_header(){
 	if(packd.tcplen + packd.ip4len > 120)
 		return;
 
@@ -136,7 +136,7 @@ inline void cache_packet_header(){
 //copy_cached_packet:
 //   Copies packet buffered in session to new_buf
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void retransmit_cached_packet_header() {
+void retransmit_cached_packet_header() {
 	//add ipv4 header, core tcp header
 	memmove(packd.new_buf, packd.sess->rex_buf, packd.sess->rex_buf_len);
 
@@ -448,8 +448,8 @@ void create_new_packet(unsigned char *const tcp_opt_buf, uint16_t len){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //find  TP option: evaluates TP option array for some subkind
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int find_MPsubkind(struct mptcp_option * const mptopt, size_t nb_options, const unsigned char subkind){
-	int i=0;
+inline int find_MPsubkind(struct mptcp_option * const mptopt, size_t nb_options, const unsigned char subkind) {
+	unsigned i=0;
 	if(nb_options == 0)
 		return -1;	
 
@@ -457,7 +457,7 @@ inline int find_MPsubkind(struct mptcp_option * const mptopt, size_t nb_options,
 		i++;
 	}
 
-	return (i==nb_options)? -1:i;
+	return (i==nb_options)? -1 : (int)i;
 }
 
 
@@ -485,7 +485,8 @@ int analyze_MPcap(struct mptcp_option * const mptopt, size_t const nb_topt, uint
 		key_loc[1] = *(uint32_t *) (mptopt[it].data +12);
 
 	}
-	else key_loc == NULL;
+	//WTF ?
+	//else key_loc == NULL;
 
 	return 1;
 }
@@ -936,7 +937,7 @@ int find_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind) 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //find_offset_of_tcp_option(): searches for tcp option with certain kind and returns offset to beginning of option
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int find_offset_of_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind) {
+int find_offset_of_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind) {
 
 	unsigned char offset = 0;
 	int found = -1;
@@ -1087,7 +1088,6 @@ size_t parse_compact_options(unsigned char *opt_buf, uint16_t opt_len, struct tc
 
 	size_t offset = 0;
 	size_t count = 0;
-	size_t i;
 	while(offset < opt_len) {
 		if (*(opt_buf+offset) <= 1) {
 			offset++;
@@ -1112,11 +1112,10 @@ size_t parse_compact_options(unsigned char *opt_buf, uint16_t opt_len, struct tc
 //++++++++++++++++++++++++++++++++++++++++++++++++
 uint16_t copy_options_to_buffer(unsigned char *buf, size_t nb_opt, struct tcp_option top[]) {
 	//copy options to buffer
-	uint16_t i1,i2;
 	uint16_t curs=0;
-	for(i1=0;i1<nb_opt;i1++) {
-		memmove(buf+curs, &topt[i1], top[i1].len);
-		curs+=top[i1].len;
+	for(uint16_t i=0;i<nb_opt;i++) {
+		memmove(buf+curs, &topt[i], top[i].len);
+		curs+=top[i].len;
 	}
 	return curs;	
 }

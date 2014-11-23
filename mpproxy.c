@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 	timeout.tv_usec = 0;
 
 	char buf[LEN_FIFO_MSG+1];
-	int fd,rv;
+	int fd;
 	int rtn = select(FD_SETSIZE, &fds_test, (fd_set *) NULL, (fd_set *) NULL, &timeout);
 	if(rtn == -1) {
 		printf("mpproxy: select returns=%d, exit program!\n",rtn);	

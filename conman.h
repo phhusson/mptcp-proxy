@@ -93,12 +93,10 @@ void check_for_remote_break(struct session * const sess, struct subflow * const 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void do_make(char * const ifname, const uint32_t new_ipaddr);
 
-/*
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //conman01: do_break_before_make(char * const ifname, const uint32_t old_ipaddr, const uint32_t new_ipaddr)
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void do_break_before_make(char * const ifname, const uint32_t old_ipaddr, const uint32_t new_ipaddr);
-*/
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //conman01: do_remove_address(char * const ifname, const uint32_t old_ipaddr, const uint32_t new_ipaddr )

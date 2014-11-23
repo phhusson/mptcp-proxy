@@ -7,7 +7,7 @@
 #include "tp_heap.h"
 
 //returns 1 if ev1 occurred earlier than ev2, otherwise 0
-inline int earlier(struct tp_event *ev1, struct tp_event *ev2) {
+int earlier(struct tp_event *ev1, struct tp_event *ev2) {
 	if(ev2 == NULL) return 0;
 	else if(ev1 == NULL) return 1; 
 
@@ -15,7 +15,7 @@ inline int earlier(struct tp_event *ev1, struct tp_event *ev2) {
 		 + ((double)(ev2->time.tv_usec - ev1->time.tv_usec))/1000000.0 ) > 0)? 1:0;
 }
 
-inline int is_due(struct tp_event *ev, struct timeval *tm) {
+int is_due(struct tp_event *ev, struct timeval *tm) {
 	//retransmit time 
 	return ((1.0 * ((double)(tm->tv_sec - ev->time.tv_sec))
 		 + ((double)(tm->tv_usec - ev->time.tv_usec))/1000000.0 ) > 0)? 1:0;

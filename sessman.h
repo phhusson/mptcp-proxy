@@ -177,7 +177,7 @@ struct session_parms* create_session_parm(
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void delete_all_sessions()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int delete_all_sessions();
+void delete_all_sessions();
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -204,7 +204,7 @@ struct subflow* find_subflow_in_session(struct session *sess, int sfl_index_prov
 //SESSMAN: void add_subflow_to_session(struct subflow *sfl, struct session * sess)
 //	Returns -1 if session not found
 //++++++++++++++++++++++++++++++++++++++++++++++++
-extern inline void add_subflow_to_session(struct subflow *sfl, struct session * sess);
+extern void add_subflow_to_session(struct subflow *sfl, struct session * sess);
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -278,4 +278,4 @@ void execute_sess_teardown(struct session *sess);
 
 
 
-
+void break_during_switch(struct session *sess);
