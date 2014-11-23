@@ -1,0 +1,49 @@
+README
+
+Date: 041213
+
+//*****************************************************
+//*****************************************************
+//
+// Project: mptcp_proxy
+//
+//*****************************************************
+
+//*****************************************************
+//
+// GEORG HAMPEL - Bell Labs/NJ/USA: All Rights Reserved
+//
+//*****************************************************
+
+//*****************************************************
+//
+// Version: 1.01
+//
+//*****************************************************
+//
+//*****************************************************
+//CHANGES OVER VERSION 1.0:
+//	Bug fix in case proxy resides on router and session
+//	is initated by non-proxy host.
+//
+//Added proxy support for on-path routers
+//	Proxy on router creates session when passing 
+//CHANGES OVER VERSION 0.9:
+//
+//Added proxy support for on-path routers
+//	Proxy on router creates session when passing 
+//	SYN with MP_CAPABLE.
+//	If SYN/ACK returned by correspondent also
+//	contains MP_CAPABLE, proxy on router drops session
+//	which creates an end-to-end MPTCP session.
+//	Otherwise, on-path proxy translates between MPTCP
+//	and TCP.
+//
+//
+//
+//CHANGES OVER VERSION 0.8:
+//
+//When interfaces can change IP addresses, mptcp_proxy
+//	automatically breaks the old subflow and 
+//	creates a new subflow from the new IP address
+//
