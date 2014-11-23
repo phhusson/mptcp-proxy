@@ -55,8 +55,7 @@ struct print_data prt_data;
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //clear hash tables
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void clear_hash_tables(){
-
+void clear_hash_tables() {
 //	alias_hash = NULL;
 	sfl_hash = NULL;
 	sfl_index_hash = NULL;
@@ -82,7 +81,7 @@ void subflow_IPtables(
 	uint32_t ip_loc, 
 	uint16_t prt_loc, 
 	uint32_t ip_rem, 
-	uint16_t prt_rem){
+	uint16_t prt_rem) {
 
 	char str_ip_loc[20];
 	char str_ip_rem[20];
@@ -130,7 +129,7 @@ void subflow_IPtables(
 // Checks interface and ip address changes when trigger 
 //  is received by select in run_loop()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void handle_interface_changes(){
+void handle_interface_changes() {
 
 	 char *ifname = malloc(11 * sizeof(char));
 	 uint32_t new_ipaddr, old_ipaddr;
@@ -153,12 +152,10 @@ void handle_interface_changes(){
 	int i,j;
 
 	//check for new interface
-	for(i=0;i<if_tab2.nb_if;i++){//is there some IF in tab2 that's missing in tab1
+	for(i=0;i<if_tab2.nb_if;i++) {//is there some IF in tab2 that's missing in tab1
 		int found = 0;
-		for(j=0;j<if_tab1.nb_if;j++){
-
+		for(j=0;j<if_tab1.nb_if;j++) {
 				if( strcmp(if_tab1.ifname[j], if_tab2.ifname[i]) == 0) found = 1;
-
 		}
 
 		if(!found && strstr(if_tab2.ifname[i],":") == 0) {//new interface found
@@ -179,15 +176,13 @@ void handle_interface_changes(){
 	}
 
 	//check for old interface with new IP address
-	for(i=0;i<if_tab2.nb_if;i++){//is there some IF in tab2 that's missing in tab1
+	for(i=0;i<if_tab2.nb_if;i++) {//is there some IF in tab2 that's missing in tab1
 
-		for(j=0;j<if_tab1.nb_if;j++){
-
+		for(j=0;j<if_tab1.nb_if;j++) {
 			if( strcmp(if_tab1.ifname[j], if_tab2.ifname[i]) == 0) {
-
 				old_ip = find_ipaddr(&if_tab1, if_tab1.ifname[j]);
 				new_ip = find_ipaddr(&if_tab2, if_tab2.ifname[i]);
-				if(old_ip == 0){
+				if(old_ip == 0) {
 
 					sprintIPaddr(buf_ip_new, new_ip);
 					sprintIPaddr(buf_ip_old, old_ip);
@@ -201,8 +196,7 @@ void handle_interface_changes(){
 						do_make(if_tab2.ifname[i], new_ip);
 					}
 
-				}
-				else{
+				} else {
 
 					if(new_ip != old_ip){
 
@@ -230,18 +224,15 @@ void handle_interface_changes(){
 
 
 	//check for old interface missing: interface dropped
-	for(i=0;i<if_tab1.nb_if;i++){//is there some IF in tab2 that's missing in tab1
+	for(i=0;i<if_tab1.nb_if;i++ ){//is there some IF in tab2 that's missing in tab1
 		int found = 0;
-		for(j=0;j<if_tab2.nb_if;j++){
-
+		for(j=0;j<if_tab2.nb_if;j++) {
 				if( strcmp(if_tab2.ifname[j], if_tab1.ifname[i]) == 0) found = 1;
-
 		}
 
 		if(!found) {//old interface missing
 			old_ip = find_ipaddr(&if_tab1, if_tab1.ifname[i]);
-			if(old_ip != 0){
-
+			if(old_ip != 0) {
 				sprintIPaddr(buf_ip_old, old_ip);
 				sprintf(msg_buf, "handle_interface_changes: interface=%s with ipaddr=%s is down", if_tab1.ifname[i], buf_ip_old);
 				add_msg(msg_buf);
@@ -254,7 +245,6 @@ void handle_interface_changes(){
 				//copy all aliase of old interface to another interface thats up
 				size_t ifup = find_iface_up(&if_tab1);
 				if(ifup < if_tab1.nb_if) copy_alias_arrays(&if_tab1, i, ifup);
-						
 			}
 		}
 	}
@@ -278,37 +268,35 @@ void check_for_session_break(struct if_table *iftab, size_t index, const uint32_
 
 	HASH_ITER(hh, sess_hash, curr_sess, tmp_sess) {
 		
-		if(curr_sess != NULL && curr_sess->ft.ip_loc == old_ipaddr){
+		if(curr_sess == NULL || curr_sess->ft.ip_loc != old_ipaddr)
+			continue;
 
-			sprintf(msg_buf,"check_for_session_break: ip address=%s found in sess_id=%u", buf_ip, curr_sess->index);
+		sprintf(msg_buf,"check_for_session_break: ip address=%s found in sess_id=%u", buf_ip, curr_sess->index);
+		add_msg(msg_buf);
+
+		//check if ipaddr is already in alias list. If not or if IF is down add old IP address to alias
+		size_t tab_index;
+		size_t alias_index;	
+
+		int found = find_alias_ip(&if_tab1, old_ipaddr, &tab_index, &alias_index);
+
+		if(!found) {
+
+			if(iftab->ipaddr[index] != 0){
+				add_alias_ip(&if_tab1, index, old_ipaddr);
+			}			
+			else{
+				size_t ifup = find_iface_up(&if_tab1);
+				if(ifup < if_tab1.nb_if) add_alias_ip(&if_tab1, ifup, old_ipaddr);
+			}
+
+		} else {
+			sprintf(msg_buf,"check_for_session_break: ip address=%s found in sess_id=%u, alias exists for IF=%s, id=%u", 
+				buf_ip, curr_sess->index, if_tab1.ifname[tab_index], alias_index);
 			add_msg(msg_buf);
 
-			//check if ipaddr is already in alias list. If not or if IF is down add old IP address to alias
-			size_t tab_index;
-			size_t alias_index;	
-
-			int found = find_alias_ip(&if_tab1, old_ipaddr, &tab_index, &alias_index);
-
-			if(!found){
-
-				if(iftab->ipaddr[index] != 0){
-					add_alias_ip(&if_tab1, index, old_ipaddr);
-				}			
-				else{
-					size_t ifup = find_iface_up(&if_tab1);
-					if(ifup < if_tab1.nb_if) add_alias_ip(&if_tab1, ifup, old_ipaddr);
-				}
-
-			}
-			else {
-				sprintf(msg_buf,"check_for_session_break: ip address=%s found in sess_id=%u, alias exists for IF=%s, id=%u", 
-					buf_ip, curr_sess->index, if_tab1.ifname[tab_index], alias_index);
-				add_msg(msg_buf);
-
-			}
-		}//end if
+		}
 	}//end HASH_ITER
-	return;
 }
 
 
@@ -317,20 +305,18 @@ void check_for_session_break(struct if_table *iftab, size_t index, const uint32_
 // checks if aliase in iftab1[index] are explicitly in iftab2
 // if not they are added to iftab1
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void reinstate_old_alias(struct if_table *iftab1, size_t index, struct if_table *iftab2){
+void reinstate_old_alias(struct if_table *iftab1, size_t index, struct if_table *iftab2) {
 
 	int i,j;
 	char buf_ip[16];
-	for(i=0;i<iftab1->pAalias[index].number;i++){
+	for(i=0;i<iftab1->pAalias[index].number;i++) {
 
 		uint32_t* p_ip = (uint32_t*) get_pnt_pA(&iftab1->pAalias[index], i);
-
 		sprintf(msg_buf,"reinstate_old_alias: reinstating ifname=%s:%u", 
 					iftab1->ifname[index], i);
 
 		int found = 0;
-		for(j=0;j<iftab2->nb_if;j++){
-
+		for(j=0;j<iftab2->nb_if;j++) {
 			if( strstr(iftab2->ifname[j], ":") != 0 && strstr(iftab2->ifname[j], iftab1->ifname[index]) != 0 ) found = 1;
 		}
 		if(!found) {
@@ -342,7 +328,6 @@ void reinstate_old_alias(struct if_table *iftab1, size_t index, struct if_table 
 			create_alias(iftab1->ifname[index], i, *p_ip);
 		}
 	}
-	return;
 }
 
 
@@ -352,15 +337,12 @@ void reinstate_old_alias(struct if_table *iftab1, size_t index, struct if_table 
 //	returns 1, tab_index and alias_index if ipaddr is found among aliases; 0 otherwise
 //	this is used to check if IP addr is already in alias list before adding it.
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int find_alias_ip(struct if_table *iftab, uint32_t ipaddr, size_t *tab_index, size_t *alias_index){
-
+int find_alias_ip(struct if_table *iftab, uint32_t ipaddr, size_t *tab_index, size_t *alias_index) {
 	size_t i,j;
-	for(i=0; i<iftab->nb_if; i++){
-
-		for(j=0; j<iftab->pAalias[i].number; j++){
-
+	for(i=0; i<iftab->nb_if; i++) {
+		for(j=0; j<iftab->pAalias[i].number; j++) {
 			uint32_t* p_ip = (uint32_t*) get_pnt_pA(&iftab->pAalias[i], j);
-			if(p_ip && *p_ip == ipaddr){
+			if(p_ip && *p_ip == ipaddr) {
 
 				*tab_index = i;
 				*alias_index = j;
@@ -376,11 +358,9 @@ int find_alias_ip(struct if_table *iftab, uint32_t ipaddr, size_t *tab_index, si
 //void fix_alias_arrays(struct if_table *iftab, size_t size_t new_ target_index
 //	finds all interfaces in if_table that are down and copies their aliases tointerface=iftab[target_index]
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void fix_alias_arrays(struct if_table *iftab, size_t target_index){
-
+void fix_alias_arrays(struct if_table *iftab, size_t target_index) {
 	size_t i;
-	for(i=0;i<iftab->nb_if;i++){
-
+	for(i=0;i<iftab->nb_if;i++) {
 		if(i != target_index && iftab->ipaddr[i] == 0) copy_alias_arrays(iftab, i, target_index);
 
 	}
@@ -395,20 +375,19 @@ void fix_alias_arrays(struct if_table *iftab, size_t target_index){
 //	this is used to safe the alias IPs of an if that goes down
 //	aliases on old interface are cleared automatically when interface goes down
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void copy_alias_arrays(struct if_table *iftab, size_t source_index, size_t target_index){
+void copy_alias_arrays(struct if_table *iftab, size_t source_index, size_t target_index) {
 
 	sprintf(msg_buf, "copy_alias_arrays: copying alias arrays");
 	add_msg(msg_buf);
 
 	size_t i;
 	if(source_index == target_index) return;
-	for(i=0;i<iftab->pAalias[source_index].number;i++){
 
+	for(i=0;i<iftab->pAalias[source_index].number;i++) {
 		uint32_t* p_ip = (uint32_t*) get_pnt_pA(&iftab->pAalias[source_index], i);
 		if(p_ip) add_alias_ip(iftab, target_index, *p_ip);
 	}
 	clear_pA(&iftab->pAalias[source_index]);
-	return;
 }
 
 
@@ -417,8 +396,7 @@ void copy_alias_arrays(struct if_table *iftab, size_t source_index, size_t targe
 //void add_alias_ip(struct if_tab *iftab, size_t index ifname, uint32_t ipaddr)
 //	adds ipaddr as alias to interface = iftab[index]
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void add_alias_ip(struct if_table *iftab, size_t index, uint32_t ipaddr){
-
+void add_alias_ip(struct if_table *iftab, size_t index, uint32_t ipaddr) {
 	uint32_t *ip_alias = malloc(sizeof(uint32_t));
 	*ip_alias = ipaddr;
 	size_t alias_id = iftab->pAalias[index].number;
@@ -426,8 +404,6 @@ void add_alias_ip(struct if_table *iftab, size_t index, uint32_t ipaddr){
 
 	create_alias(iftab->ifname[index], iftab->max_alias_index[index], ipaddr);
 	iftab->max_alias_index[index]++;
-	return;
-
 }
 
 
@@ -435,8 +411,7 @@ void add_alias_ip(struct if_table *iftab, size_t index, uint32_t ipaddr){
 //void create_alias_ip(char* ifname, size_t index, uint32_t ipaddr)
 //	adds alias with index and ipaddr to interface
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_alias(char* ifname, size_t index, uint32_t ipaddr){
-
+void create_alias(char* ifname, size_t index, uint32_t ipaddr) {
 	char cmd[50];
 	strcpy(cmd, "ifconfig ");
 	strcat(cmd, ifname);
@@ -451,19 +426,13 @@ void create_alias(char* ifname, size_t index, uint32_t ipaddr){
 	sprintf(msg_buf, "create_alias: cmd=%s", cmd);
 	add_msg(msg_buf);
 	system(cmd);
-	return;
-
 }
-
-
-
-
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void delete_alias_ip(struct if_tab *iftab, size_t index ifname, uint32_t ipaddr)
 //	deletes ipaddr as alias to interface = iftab[index]
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void delete_alias_entry(struct if_table *iftab, size_t tab_index, size_t alias_index){
+void delete_alias_entry(struct if_table *iftab, size_t tab_index, size_t alias_index) {
 
 	//get IP address and then delete entry in table
 	uint32_t *p_ip = (uint32_t*) get_pnt_pA(&iftab->pAalias[tab_index], alias_index);
@@ -484,49 +453,41 @@ void delete_alias_entry(struct if_table *iftab, size_t tab_index, size_t alias_i
 	sprintf(msg_buf, "delete_alias_entry: cmd=%s", cmd);
 	add_msg(msg_buf);
 	system(cmd);
-	return;
-
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void clean_aliases(struct if_tab *iftab)
 //	cleans alias arrays
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void clean_aliases(struct if_table *iftab){
-
+void clean_aliases(struct if_table *iftab) {
 	sprintf(msg_buf, "clean_alias: cleaning aliases");
 	add_msg(msg_buf);
 
 	size_t i,j;
 	int found;
 	struct session *curr_sess, *tmp_sess;
-	for(i=0; i<iftab->nb_if; i++){
-
-		for(j=0; j<iftab->pAalias[i].number; j++){
-
+	for(i=0; i<iftab->nb_if; i++) {
+		for(j=0; j<iftab->pAalias[i].number; j++) {
 			uint32_t *p_ip = (uint32_t*) get_pnt_pA(&iftab->pAalias[i], j);
 					
 			found = 0;
 			HASH_ITER(hh, sess_hash, curr_sess, tmp_sess) {
-		
-				if(curr_sess != NULL && p_ip != NULL && curr_sess->ft.ip_loc == *p_ip) found = 1;
+				if(curr_sess != NULL && p_ip != NULL && curr_sess->ft.ip_loc == *p_ip)
+					found = 1;
 			}
 			if(!found) delete_alias_entry(iftab, i,j);
-
 		}
 	}
-
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void add_interface_to_table(iftab, ifname, new_ipaddr)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void add_interface_to_table(struct if_table *iftab, char* ifname, uint32_t new_ipaddr){
-
-		strcpy(iftab->ifname[iftab->nb_if],ifname);
-		iftab->ipaddr[iftab->nb_if] = new_ipaddr;
-		clear_pA(&iftab->pAalias[iftab->nb_if]);
-		iftab->nb_if++;
+void add_interface_to_table(struct if_table *iftab, char* ifname, uint32_t new_ipaddr) {
+	strcpy(iftab->ifname[iftab->nb_if],ifname);
+	iftab->ipaddr[iftab->nb_if] = new_ipaddr;
+	clear_pA(&iftab->pAalias[iftab->nb_if]);
+	iftab->nb_if++;
 }
 
 
@@ -555,7 +516,7 @@ int update_iftable(struct if_table *iftab, char * const ifname, const uint32_t n
 
 	if(strstr(ifname,":") != 0) {
 
-		if(clear_aliases){
+		if(clear_aliases) {
 
 			char cmd[50];
 			strcpy(cmd, "ifconfig ");
@@ -577,15 +538,14 @@ int update_iftable(struct if_table *iftab, char * const ifname, const uint32_t n
 	//if IF is already in table, update IP addr
 	int i,found=-1;
 	for(i=0;i<iftab->nb_if;i++) {
-		if(strcmp(ifname, iftab->ifname[i]) == 0){
+		if(strcmp(ifname, iftab->ifname[i]) == 0) {
 			found=i;
 			break;
 		}
 	}	
 
 
-	if(found>-1){//interface was found in table
-
+	if(found>-1) {//interface was found in table
 		//check if new IP address matches that of other entries. If so, set them to 0
 		for(i=0;i<iftab->nb_if;i++) {
 			if(strcmp(ifname, iftab->ifname[i]) == 0 && found!=i) {
@@ -594,7 +554,7 @@ int update_iftable(struct if_table *iftab, char * const ifname, const uint32_t n
 		}	
 
 		//matching IP address
-		if(new_ipaddr == iftab->ipaddr[found]){
+		if(new_ipaddr == iftab->ipaddr[found]) {
 			return 0;
 		}
 
@@ -603,9 +563,7 @@ int update_iftable(struct if_table *iftab, char * const ifname, const uint32_t n
 		iftab->ipaddr[found] = new_ipaddr;
 
 		return 1;
-	}
-	else{	//new ifname
-
+	} else { //new ifname
 		//check if any IP address matches that of other entries. If so, set them to 0
 		for(i=0;i<iftab->nb_if;i++) {
 			if(strcmp(ifname, iftab->ifname[i]) == 0) iftab->ipaddr[i] = 0;
@@ -621,7 +579,7 @@ int update_iftable(struct if_table *iftab, char * const ifname, const uint32_t n
 		add_interface_to_table(iftab, ifname, new_ipaddr);
 		return 2;
 	}
-
+	return 0;
 }
 
 
@@ -631,11 +589,9 @@ int update_iftable(struct if_table *iftab, char * const ifname, const uint32_t n
 //	returns first interface in table that is up
 //	if none is up, returns iftab.nb_if
 //++++++++++++++++++++++++++++++++++++++++++++++++
-size_t find_iface_up(struct if_table *iftab){
-
+size_t find_iface_up(struct if_table *iftab) {
 	size_t i;		
-	for(i=0; i<if_tab1.nb_if; i++){
-
+	for(i=0; i<if_tab1.nb_if; i++) {
 		if(if_tab1.ipaddr[i] != 0) return i;
 	}
 }
@@ -646,13 +602,12 @@ size_t find_iface_up(struct if_table *iftab){
 // finds another IP address than the one passed
 // Returns 0 if none found
 //++++++++++++++++++++++++++++++++++++++++++++++++
-uint32_t find_other_ipaddr(struct if_table *iftab, uint32_t ipaddr){
+uint32_t find_other_ipaddr(struct if_table *iftab, uint32_t ipaddr) {
 
 	//if IF is already in table (and not 127.0.0.1), update IP addr	
 	int i,found=-1;
 	for(i=0;i<iftab->nb_if;i++) {
-		if(iftab->ipaddr[i] != ipaddr && iftab->ipaddr[i] != 2130706433 && iftab->ipaddr[i] != 0){
-
+		if(iftab->ipaddr[i] != ipaddr && iftab->ipaddr[i] != 2130706433 && iftab->ipaddr[i] != 0) {
 			found=i;
 			break;
 		}
@@ -662,9 +617,7 @@ uint32_t find_other_ipaddr(struct if_table *iftab, uint32_t ipaddr){
 		sprintf(msg_buf, "find_other_ipaddr: no other ipaddr found");
 		add_msg(msg_buf);
 		return 0;
-	}
-	else {
-
+	} else {
 		char buf_ip[34];
 		sprintIPaddr(buf_ip, iftab->ipaddr[found]);
 
@@ -685,13 +638,12 @@ uint32_t find_other_ipaddr(struct if_table *iftab, uint32_t ipaddr){
 // Returns 0 if not found, otherwise 1
 // IP address in host format
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int find_interface(struct if_table *iftab, char *ifname, const uint32_t ipaddr){
-
+int find_interface(struct if_table *iftab, char *ifname, const uint32_t ipaddr) {
 	if(iftab->nb_if == 0) return 0;
 
 	int i=0;
 	while(i < MAX_INTERFACES && iftab->ipaddr[i] != ipaddr) i++;
-	if(iftab->ipaddr[i] == ipaddr){
+	if(iftab->ipaddr[i] == ipaddr) {
 		strcpy(ifname, iftab->ifname[i]);
 		return 1;
 	}
@@ -704,13 +656,12 @@ int find_interface(struct if_table *iftab, char *ifname, const uint32_t ipaddr){
 // Returns 0 if not found, otherwise ipaddr
 // IP address in host format
 //++++++++++++++++++++++++++++++++++++++++++++++++
-uint32_t find_ipaddr(struct if_table *iftab, char *ifname){
-
+uint32_t find_ipaddr(struct if_table *iftab, char *ifname) {
 	if(iftab->nb_if == 0) return 0;
 
 	int i=0;
 	while(i < MAX_INTERFACES && strcmp(iftab->ifname[i], ifname) != 0)  i++;
-	if(strcmp(iftab->ifname[i], ifname) == 0){
+	if(strcmp(iftab->ifname[i], ifname) == 0) {
 		return iftab->ipaddr[i];
 	}
 	return 0;
@@ -719,17 +670,16 @@ uint32_t find_ipaddr(struct if_table *iftab, char *ifname){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void print_iptable()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void print_iptable(struct if_table *iftab){
+void print_iptable(struct if_table *iftab) {
 
 	int i,j,found=-1;
 	char buf_ip[16];
-	for(i=0;i<iftab->nb_if;i++){
-
+	for(i=0;i<iftab->nb_if;i++) {
 		sprintIPaddr(buf_ip, iftab->ipaddr[i]);
 		sprintf(msg_buf, "print_iptable: finding ifname=%s, ipaddr=%s", iftab->ifname[i], buf_ip);
 		add_msg(msg_buf);
 
-		for(j=0; j<iftab->pAalias[i].number; j++){
+		for(j=0; j<iftab->pAalias[i].number; j++) {
 
 			uint32_t* p_ip = (uint32_t*) get_pnt_pA(&iftab->pAalias[i], j);
 
@@ -737,9 +687,7 @@ void print_iptable(struct if_table *iftab){
 			sprintf(msg_buf, "print_iptable: alias %s:%u, ipaddr=%s", iftab->ifname[i], j, buf_ip);
 			add_msg(msg_buf);
 		}
-
 	}
-	return;
 }
 
 
@@ -748,7 +696,7 @@ void print_iptable(struct if_table *iftab){
 //Get local interfaces
 // This determines all currently supported IP addresses
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void load_host_info(struct if_table *iftab, int clear_aliases, int include_aliases){
+void load_host_info(struct if_table *iftab, int clear_aliases, int include_aliases) {
 
 	struct ifaddrs *ifa;
 	struct ifaddrs *local_ifaddrs;// = malloc(10*sizeof(struct ifaddrs*));
@@ -763,31 +711,27 @@ void load_host_info(struct if_table *iftab, int clear_aliases, int include_alias
 	int family,s;
 	ifa = (struct ifaddrs*) local_ifaddrs;
 	char host[NI_MAXHOST];	
-	while(ifa){
+	for(;ifa;ifa = (struct ifaddrs*) ifa->ifa_next) {
 		if(ifa->ifa_addr == NULL) continue;
 		family = ifa->ifa_addr->sa_family;	
+		if(family != AF_INET)
+			continue;
 	
-		if(family == AF_INET){
-
-			s = getnameinfo(ifa->ifa_addr, \
-				(family == AF_INET)? sizeof(struct sockaddr_in):sizeof(struct sockaddr_in6),\
-				host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-			if(s!=0) {
-				fprintf(stderr,"load_host_info: getnameinfo() failed: %s\n", gai_strerror(s));
-				exit(1);
-			}
-			if( strcmp((char*) ifa->ifa_name, "lo") != 0){ // && strcmp( (char*) ifa->ifa_name, "dummy0") != 0){
-				uint32_t old_addr;
-				update_iftable(iftab, (char*) ifa->ifa_name, htonl(inet_addr(host)), &old_addr, clear_aliases, include_aliases);
-			}
-
+		s = getnameinfo(ifa->ifa_addr,
+			(family == AF_INET)? sizeof(struct sockaddr_in):sizeof(struct sockaddr_in6),
+			host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+		if(s!=0) {
+			fprintf(stderr,"load_host_info: getnameinfo() failed: %s\n", gai_strerror(s));
+			exit(1);
 		}
-		ifa = (struct ifaddrs*) ifa->ifa_next;
+		if( strcmp((char*) ifa->ifa_name, "lo") != 0) { // && strcmp( (char*) ifa->ifa_name, "dummy0") != 0){
+			uint32_t old_addr;
+			update_iftable(iftab, (char*) ifa->ifa_name, htonl(inet_addr(host)), &old_addr, clear_aliases, include_aliases);
+		}
+
 	}
 	freeifaddrs(local_ifaddrs);
-
 }
-
 
 
 
@@ -796,7 +740,7 @@ void load_host_info(struct if_table *iftab, int clear_aliases, int include_alias
 // Triggered when NETLINK socket receives messages
 // Shows interface update
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int update_interfaces(struct if_table *iftab, char **ifname, uint32_t *old_addr, uint32_t *new_addr){
+int update_interfaces(struct if_table *iftab, char **ifname, uint32_t *old_addr, uint32_t *new_addr) {
 
 	int len;	    
 	char buffer[4096];
@@ -839,7 +783,7 @@ int update_interfaces(struct if_table *iftab, char **ifname, uint32_t *old_addr,
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //Eval packet: Here the packet gets first
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void eval_packet(uint32_t id, size_t hook, unsigned char *buf, u_int16_t len){
+void eval_packet(uint32_t id, size_t hook, unsigned char *buf, u_int16_t len) {
 
 	//hook
 	packd.id = id;
@@ -943,9 +887,6 @@ void eval_packet(uint32_t id, size_t hook, unsigned char *buf, u_int16_t len){
 
 
 
-
-
-
 	//find TPTCP options:start at tcpoptions.
 	packd.nb_mptcp_options = parse_mptcp_options(buf+(packd.pos_thead)+20, (packd.tcplen)-20, mptopt);
 	packd.mptcp_opt_len=0;//reset this value
@@ -964,7 +905,7 @@ void eval_packet(uint32_t id, size_t hook, unsigned char *buf, u_int16_t len){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //insert_event: reinserts event
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void insert_event(struct tp_event *evt, time_t dsec, suseconds_t dusec){
+void insert_event(struct tp_event *evt, time_t dsec, suseconds_t dusec) {
 
 	//retransmit time 
 	gettimeofday(&evt->time, NULL);
@@ -978,7 +919,7 @@ void insert_event(struct tp_event *evt, time_t dsec, suseconds_t dusec){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //handle event: sends event to the corresponding event-type handlers
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void handle_event(struct tp_event *evt){
+void handle_event(struct tp_event *evt) {
 
 	char state_str[20];		
 	translate_event_state(evt->type, state_str);
@@ -999,14 +940,13 @@ void handle_event(struct tp_event *evt){
 	case REMOVE_ADDR: handle_remove_addr_event(evt);
 		break;
 	}
-	return;
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //check event queue: sends event to the corresponding event-type handlers
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void check_event_queue(){
+void check_event_queue() {
 
 	//retransmit time 
 	struct timeval now;
@@ -1022,34 +962,29 @@ void check_event_queue(){
 		DeleteMin(PQ);
 		ev = FindMin(PQ);
 	}
-	return;
 }
-
-
 
 
 //callback function
 static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
-               struct nfq_data *nfa, void *data)
- {
-
+               struct nfq_data *nfa, void *data) {
 
         u_int32_t id;// = print_pkt(nfa);
         struct nfqnl_msg_packet_hdr *ph;
 	ph = nfq_get_msg_packet_hdr(nfa);
-	if (ph){
+	if (ph) {
 		id = ntohl(ph->packet_id);
 	}
  
 
-        unsigned char *payldata;
+	unsigned char *payldata;
 	char *payldata2; 
-       int ret = nfq_get_payload(nfa, &payldata2);
+	int ret = nfq_get_payload(nfa, &payldata2);
 	payldata = (unsigned char*) payldata2;
 
  	int i;
   
-  	if (ret >= 0){
+  	if (ret >= 0) {
 
 		eval_packet(id, ph->hook, payldata, ret);
 		mangle_packet(id);
@@ -1073,12 +1008,10 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 		add_msg(msg_buf);
 	}
 	return res;
- }
+}
 
 
-
-
- void run_loop(){
+void run_loop() {
 	 
 	 fd_set fds_test;
 	 fd_set fds_input;
@@ -1092,45 +1025,41 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	 sprintf(msg_buf,"run_loop: loading host table");
 	 add_msg(msg_buf);
 	 load_host_info(&if_tab1, 1, 0);//clears aliases
-	int i;
-	for(i=0;i<MAX_INTERFACES;i++) if_tab1.max_alias_index[i] = 0;
+	 int i;
+	 for(i=0;i<MAX_INTERFACES;i++) if_tab1.max_alias_index[i] = 0;
 	 print_iptable(&if_tab1);//prints IP table to msg_Buf
          
          static int count=0;
  	 int rtn,fd,rv;
 
-	 while(!terminate_loop){
-
+	 while(!terminate_loop) {
 	 	rtn = select(FD_SETSIZE, &fds_test, (fd_set *) NULL, (fd_set *) NULL, (struct timeval*) NULL);
 
-			
 		if(rtn == -1) {
 			fprintf(stderr,"select returns=%d, exit program!\n",rtn);	
 			exit(1);
 		}
-		for(fd = 0; fd < FD_SETSIZE; fd++){
-			if(FD_ISSET(fd, &fds_test)){
-	
-				if(fd == nf_fd){
-					check_event_queue();
-					rv = recv(nf_fd, nf_buf, sizeof(nf_buf), 0);
-					if(rv>=0) {
-						count++;
-			               		nfq_handle_packet(h, nf_buf, rv);
-					}
-				}
-				if(fd == nl_sd){
+		for(fd = 0; fd < FD_SETSIZE; fd++) {
+			if(!FD_ISSET(fd, &fds_test))
+				continue;
 
-					handle_interface_changes();
+			if(fd == nf_fd) {
+				check_event_queue();
+				rv = recv(nf_fd, nf_buf, sizeof(nf_buf), 0);
+				if(rv>=0) {
+					count++;
+					nfq_handle_packet(h, nf_buf, rv);
 				}
+			}
 
-				if (fd == fd_fifo_dwn){
-					check_event_queue();
-					check_fifo_msg();
+			if(fd == nl_sd) {
+				handle_interface_changes();
+			}
 
-				}
-				
-			}//end if F
+			if (fd == fd_fifo_dwn) {
+				check_event_queue();
+				check_fifo_msg();
+			}
 		}
 
 		FD_CLR(nf_fd, &fds_input);
@@ -1144,13 +1073,10 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	}//end while(1)
 
 
- } 
+} 
 
 
-
-
- int main(int argc, char **argv)
- {
+int main(int argc, char **argv) {
 
 	//init msg and file printing
 	init_msg_data();
@@ -1161,7 +1087,6 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 
 	//clear tables
 	clear_hash_tables();
-
 
 	//init dummy interface	
 //	init_dummy_iface();
@@ -1175,7 +1100,7 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	//setup of raw socket to send packets
 	add_msg("setting up raw socket");
 	raw_sd = socket(PF_INET, SOCK_RAW, IPPROTO_RAW);
-	if(raw_sd<0){
+	if(raw_sd<0) {
 		fprintf(stderr, "couldn't open RAW socket\n");
 		exit(1);
 	}
@@ -1183,7 +1108,7 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	//setup or raw socket for NETLINK to report interface changes
 	struct sockaddr_nl addr;
 	nl_sd = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
-	if(nl_sd == -1){
+	if(nl_sd == -1) {
 		fprintf(stderr, "couldn't open NETLINK_ROUTE socket\n");
 		exit(1);
 	}
@@ -1191,13 +1116,10 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	addr.nl_family = AF_NETLINK;
 	addr.nl_groups = RTMGRP_IPV4_IFADDR;
 
-
-	if (bind(nl_sd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+	if(bind(nl_sd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
 		fprintf(stderr, "couldn't bind NETLINK_ROUTE\n");
 		exit(1);
 	}
-
-
 
 	//make FIFOs
         add_msg("init FIFOs");
@@ -1209,53 +1131,50 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	//setup of netfilter queue
          add_msg("opening library handle");
          h = nfq_open();
-         if (!h) {
+         if(!h) {
                  fprintf(stderr, "error during nfq_open()\n");
                  exit(1);
          }
  
          add_msg("unbinding existing nf_queue handler for AF_INET (if any)");
-         if (nfq_unbind_pf(h, AF_INET) < 0) {
+         if(nfq_unbind_pf(h, AF_INET) < 0) {
                  fprintf(stderr, "error during nfq_unbind_pf()\n");
                  exit(1);
          }
  
          add_msg("binding nfnetlink_queue as nf_queue handler for AF_INET");
-         if (nfq_bind_pf(h, AF_INET) < 0) {
+         if(nfq_bind_pf(h, AF_INET) < 0) {
                  fprintf(stderr, "error during nfq_bind_pf()\n");
                  exit(1);
          }
  
          add_msg("binding this socket to queue '0'");
          qh = nfq_create_queue(h,  0, &cb, NULL);
-         if (!qh) {
+         if(!qh) {
                  fprintf(stderr, "error during nfq_create_queue()\n");
                  exit(1);
          }
  
          add_msg("setting copy_packet mode");
-         if (nfq_set_mode(qh, NFQNL_COPY_PACKET, 0xffff) < 0) {
+         if(nfq_set_mode(qh, NFQNL_COPY_PACKET, 0xffff) < 0) {
               fprintf(stderr, "can't set packet_copy mode\n");
                  exit(1);
          }
 
-	if (nfq_set_queue_maxlen(qh, 8192) < 0){
+	if(nfq_set_queue_maxlen(qh, 8192) < 0) {
 		fprintf(stderr,"error during extension of buffer size\n");
 		exit(1);
 	}
 
 	nfnl_rcvbufsiz(nfq_nfnlh(h), 50000000);
-
         nf_fd = nfq_fd(h);
-
 
 	add_msg("****STARTING MAIN LOOP****");
 
 	//running main loop
-	 run_loop();
+	run_loop();
 
 	add_msg("****TERMINATING MAIN LOOP****");
-
 
    
 	delete_all_sessions();
@@ -1263,11 +1182,11 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	//unbinding from queue 0
          nfq_destroy_queue(qh);
  
- #ifdef INSANE
+#ifdef INSANE
          /* normally, applications SHOULD NOT issue this command, since
           * it detaches other programs/sockets from AF_INET, too ! */
          nfq_unbind_pf(h, AF_INET);
- #endif
+#endif
  
  	//flush iptables
 	 system("iptables -F");
@@ -1276,16 +1195,12 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	 sprintf(msg_buf,"deleting all alias interfaces\n");
 	 add_msg(msg_buf);
 	 load_host_info(&if_tab1, 1, 0);
-	clean_aliases(&if_tab1);
+	 clean_aliases(&if_tab1);
 
-	terminate_msg_data();
-	if(PRINT_FILE) terminate_print_data();
+	 terminate_msg_data();
+	 if(PRINT_FILE) terminate_print_data();
 
-
-
-         nfq_close(h);
+	 nfq_close(h);
          exit(0);
- }
-
-
+}
 

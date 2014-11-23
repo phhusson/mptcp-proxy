@@ -31,9 +31,7 @@ struct session_parms *sess_parms_hash = NULL;
 //int create_new_session_input()
 //  creates session when hook=1 and TPcap
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int create_new_session_input(uint32_t *key_rem){
-
-
+int create_new_session_input(uint32_t *key_rem) {
 	char buf_key[32];
 	sprint_buffer((unsigned char*) key_rem, buf_key, 8, 1);
 	sprintf(msg_buf,"contemplate new sess_input: key_rem=%s,input tcp_seq=%lu, tcp_an=%lu",
@@ -96,7 +94,7 @@ int create_new_session_input(uint32_t *key_rem){
 		1);
 
 
-	if(sess == NULL){
+	if(sess == NULL) {
 		sprintf(msg_buf, "create_new_session_input: returns NULL when creating session");
 		add_msg(msg_buf);
 		return 0;
@@ -126,12 +124,11 @@ int create_new_session_input(uint32_t *key_rem){
 	int adjust_packet = 0;
 
 	//session sack regulation
-	if(DO_SACK){
+	if(DO_SACK) {
 		sess->sack_flag = 1;
 		if(find_tcp_option(packd.buf+packd.pos_thead+20, init_len, 4)){
 			sflx->sack_flag = 1;
-		}
-		else{
+		} else{
 			sflx->sack_flag = 0;
 
 			//furnish with sack flag for subflow sack support
@@ -142,8 +139,7 @@ int create_new_session_input(uint32_t *key_rem){
 				adjust_packet = 1;
 			}
 		}
-	}
-	else{
+	} else{
 		sess->sack_flag = 0;
 		sflx->sack_flag = 0;
 
@@ -157,10 +153,9 @@ int create_new_session_input(uint32_t *key_rem){
 	}
 
 
-
-	if(adjust_packet){
+	if(adjust_packet) {
 		packd.mptcp_opt_len = 0;//since option is already attached
-		if(!output_data_mptcp()){
+		if(!output_data_mptcp()) {
 			set_verdict(1,0,0);
 
 			execute_sess_teardown(sess);
@@ -191,9 +186,7 @@ int create_new_session_input(uint32_t *key_rem){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //contemplate new session
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int contemplate_new_session(){
-
-
+int contemplate_new_session() {
 	//OUTPUT: Already checked sess == 0, SYN, !ACK && !MPTCP option
 	if(packd.hook == 3) return contemplate_new_session_output();
 
@@ -215,7 +208,7 @@ int contemplate_new_session(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //contemplate new session output
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int contemplate_new_session_output(){
+int contemplate_new_session_output() {
 
 	packd.fwd_type = T_TO_M;
 
@@ -224,7 +217,6 @@ int contemplate_new_session_output(){
 	packd.ft.ip_rem = ntohl(packd.ip4h->ip_dst);
 	packd.ft.prt_loc = ntohs(packd.tcph->th_sport);
 	packd.ft.prt_rem = ntohs(packd.tcph->th_dport);
-
 
 	sprintf(msg_buf, "contemplate_new_session_output: input tcp_seq=%lu, tcp_an=%lu",
 			(long unsigned) ntohl(packd.tcph->th_seq),
@@ -251,7 +243,7 @@ int contemplate_new_session_output(){
 
 	uint32_t offset_loc = ntohl(packd.tcph->th_seq) - idsn_loc;//local offset SNtcp - DSN
 
-	if( !create_MPcap(packd.mptcp_opt_buf+packd.mptcp_opt_len, key_loc, NULL) ){
+	if(!create_MPcap(packd.mptcp_opt_buf+packd.mptcp_opt_len, key_loc, NULL) ) {
 
 		sprintf(msg_buf, "contemplate_new_session_output: total option len too long, len=%u", packd.mptcp_opt_len);
 		add_msg(msg_buf);	
@@ -315,12 +307,11 @@ int contemplate_new_session_output(){
 	}
 
 
-	if(DO_SACK){
+	if(DO_SACK) {
 		sflx->sack_flag = 1;
 		if(find_tcp_option(packd.buf+packd.pos_thead+20, init_len, 4)){
 			sess->sack_flag = 1;
-		}
-		else{
+		} else {
 			sess->sack_flag = 0;
 
 			//furnish with sack flag for subflow sack support
@@ -330,13 +321,12 @@ int contemplate_new_session_output(){
 				packd.totlen += 2;
 			}
 		}
-	}
-	else{
+	} else {
 		sess->sack_flag = 0;
 		sflx->sack_flag = 0;
 
 		//remove sack flag to suppress sack on subflow
-		if(eliminate_tcp_option(packd.buf+packd.pos_thead+20, &init_len, 4)){
+		if(eliminate_tcp_option(packd.buf+packd.pos_thead+20, &init_len, 4)) {
 			packd.tcplen -= 2;
 			packd.pos_pay -= 2;
 			packd.totlen -= 2;
@@ -354,7 +344,8 @@ int contemplate_new_session_output(){
 	sess->scaling_factor_loc = scaling_factor;
 	sess->curr_window_loc = (sess->init_window_loc)>>scaling_factor;
 	sess->timestamp_flag = timestamp_flag;
-	if(sess->timestamp_flag) sess->tsval = get_timestamp(packd.buf + packd.pos_thead+20, packd.tcplen-20, 0);
+	if(sess->timestamp_flag)
+		sess->tsval = get_timestamp(packd.buf + packd.pos_thead+20, packd.tcplen-20, 0);
 
 
 	sflx->sess = sess;
@@ -364,7 +355,7 @@ int contemplate_new_session_output(){
 	packd.sess = sess;
 	packd.tcph->th_seq = htonl( packd.sfl->isn_loc );
 
-	if(!output_data_mptcp()){
+	if(!output_data_mptcp()) {
 		set_verdict(1,0,0);
 		execute_sess_teardown(sess);
 		sprintf(msg_buf, "contemplate_new_session_output: output_data_mptcp fails");
@@ -374,7 +365,6 @@ int contemplate_new_session_output(){
 
 	//buffer packet in case retransmission occurs
 	cache_packet_header();
-
 
 	sprintf(msg_buf, "contemplate_new_session_output: new session created, sess_id=%u, sess_state=SYN_SENT", packd.sess->index);
 	add_msg(msg_buf);
@@ -404,12 +394,10 @@ int contemplate_new_session_input(){
 	//get rem IDSN from MPTCP CAP option
 	uint32_t key_rem[2];
 
-	if( analyze_MPcap(mptopt, packd.nb_mptcp_options, NULL, key_rem) ){
-
-		if( create_new_session_input(key_rem) ){ 
+	if(analyze_MPcap(mptopt, packd.nb_mptcp_options, NULL, key_rem)) {
+		if(create_new_session_input(key_rem)) { 
 			return 0;
-		}
-		else{
+		} else {
 			set_verdict(0,0,0);
 			return 1;
 		}
@@ -419,8 +407,7 @@ int contemplate_new_session_input(){
 	unsigned char addr_id_rem;
 	uint32_t rand_nmb;
 	uint32_t token;
-	if( analyze_MPjoin_syn(mptopt, packd.nb_mptcp_options, &token, &rand_nmb, &addr_id_rem, &backup)){
-
+	if(analyze_MPjoin_syn(mptopt, packd.nb_mptcp_options, &token, &rand_nmb, &addr_id_rem, &backup)) {
 
 		struct session *sess;
 		struct session_parms *sess_parms;
@@ -428,7 +415,7 @@ int contemplate_new_session_input(){
 		struct session_parms *try_sess_parms, *tmp_sess_parms;
 
 		HASH_ITER(hh, sess_parms_hash, try_sess_parms, tmp_sess_parms) {
-			if(try_sess_parms != NULL && try_sess_parms->token == token){
+			if(try_sess_parms != NULL && try_sess_parms->token == token) {
 				sess_parms = try_sess_parms;
 				break;
 			}
@@ -447,7 +434,6 @@ int contemplate_new_session_input(){
 
 		HASH_FIND(hh, sess_hash, &sess_parms->ft, sizeof(struct fourtuple), sess);
 		if(sess == NULL) {
-
 			sprintf(msg_buf, "contemplate_new_session_input: session not found");
 			add_msg(msg_buf);
 
@@ -460,11 +446,10 @@ int contemplate_new_session_input(){
 
 		packd.sess = sess;
 
-		if( create_new_subflow_input(packd.sess, addr_id_rem, backup, rand_nmb) ){ 
+		if(create_new_subflow_input(packd.sess, addr_id_rem, backup, rand_nmb) ){ 
 			set_verdict(0,0,0);//packet has to be terminated here
 			return 0;
-		}
-		else{
+		} else {
 			set_verdict(1,1,0);
 			return 1;
 		}
@@ -480,13 +465,11 @@ int contemplate_new_session_input(){
 //  Targe states: PRE_EST
 //  Currently, we omit simultaneous open
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_syn_sent(){
-
+int session_syn_sent() {
 	//Check for INPUT (or FWD with M_TO_T) + SYN + ACK + MPTCP option
-	if(packd.hook < 3 && packd.fwd_type == M_TO_T && packd.syn && packd.ack){
+	if(packd.hook < 3 && packd.fwd_type == M_TO_T && packd.syn && packd.ack) {
 		//drop session if remote host does not speak MPTCP
-		if(packd.nb_mptcp_options == 0){
-
+		if(packd.nb_mptcp_options == 0) {
 			sprintf(msg_buf,"session_syn_sent: no MPTCP options attached. Killing sfl_id=%u and sess_id=%u", packd.sfl->index, packd.sess->index);
 			add_msg(msg_buf);
 			delete_subflow(&packd.ft);
@@ -499,8 +482,7 @@ int session_syn_sent(){
 		//get rem IDSN from MPTCP CAP option
 		uint32_t key_rem[2];
 		uint32_t key_loc[2];
-		if(!analyze_MPcap(mptopt, packd.nb_mptcp_options, key_loc, key_rem) ){
-
+		if(!analyze_MPcap(mptopt, packd.nb_mptcp_options, key_loc, key_rem)) {
 			sprintf(msg_buf, "session_syn_sent: analyze_MPcap fails. Killing sfl_id=%u and sess_id=%u", packd.sfl->index, packd.sess->index);
 			add_msg(msg_buf);
 			delete_subflow(&packd.ft);
@@ -515,16 +497,15 @@ int session_syn_sent(){
 
 		//check sack support for subflow
 		unsigned char len = packd.tcplen-20;
-		if(DO_SACK){
+		if(DO_SACK) {
 
-			if( find_tcp_option(packd.buf+packd.pos_thead+20, len, 4)){
+			if(find_tcp_option(packd.buf+packd.pos_thead+20, len, 4)) {
 			
 				//everything fine; in case sess->sack_flag == 0, simply keep the sack_flag rolling
-			}
-			else{
+			} else{
 
 				packd.sfl->sack_flag = 0;//no sfl sack support
-				if( packd.sess->sack_flag){
+				if( packd.sess->sack_flag) {
 
 					//furnish with sack flag for subflow sack support
 					if(append_sack(packd.buf+packd.pos_thead+20, &len)){
@@ -535,10 +516,8 @@ int session_syn_sent(){
 					}
 				}
 			}
-		}
-		else{
-			if( find_tcp_option(packd.buf+packd.pos_thead+20, len, 4)){
-			
+		} else {
+			if(find_tcp_option(packd.buf+packd.pos_thead+20, len, 4)) {
 				//ensure no sess->sack support
 				if(eliminate_tcp_option(packd.buf+packd.pos_thead+20, &len, 4)){
 					packd.tcplen -= 2;
@@ -546,11 +525,8 @@ int session_syn_sent(){
 					packd.totlen -= 2;
 					adjust_packet = 1;
 				}
-			}
-			else{
-
+			} else {
 				//everthing fine
-
 			}
 		}
 
@@ -588,9 +564,9 @@ int session_syn_sent(){
 		packd.sfl->tcp_state = PRE_EST;
 		packd.sess->sess_state = PRE_EST;
 
-		if(adjust_packet){
+		if(adjust_packet) {
 			packd.mptcp_opt_len = 0;//since option is already attached
-			if(!output_data_mptcp()){
+			if(!output_data_mptcp()) {
 				set_verdict(1,0,0);
 				execute_sess_teardown(packd.sess);
 				sprintf(msg_buf, "session_syn_sent: output_data_mptcp fails for sfl_id=%u, sess_id=%u", packd.sfl->index, packd.sess->index);
@@ -615,8 +591,7 @@ int session_syn_sent(){
 	}
 
 	//consider SYN retransmission
-	if(packd.hook > 1 && packd.fwd_type == T_TO_M && packd.syn && !packd.ack){
-		
+	if(packd.hook > 1 && packd.fwd_type == T_TO_M && packd.syn && !packd.ack) {
 		retransmit_cached_packet_header();
 		set_verdict(1,1,1);
 		return;
@@ -631,152 +606,135 @@ int session_syn_sent(){
 //  Target states: SYN_REC
 //  Add TP_CAP header
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_pre_syn_rec_1(){
-
-	if(packd.syn && packd.ack){
-	
-		if(packd.hook < 3 && packd.fwd_type == M_TO_T){
-			set_verdict(1,0,0);
-			return;
-		}
-
-		//end to end MPTCP			
-		if(packd.hook == 2 && packd.fwd_type == T_TO_M && packd.nb_mptcp_options > 0){
-
-			delete_subflow(&packd.ft);
-			delete_session_parm(packd.sess->token_loc);
-			delete_session(&packd.sess->ft, 0);
-			set_verdict(1,0,0);
-			return;			
-		}
-
-
-		packd.sfl = packd.sess->act_subflow;		
-
-		unsigned char init_len = packd.tcplen - 20;
-		manipulate_mss(packd.buf+packd.pos_thead+20, &init_len);
-
-
-		//check sack support for subflow
-		unsigned char len = packd.tcplen-20;
-		if(DO_SACK){
-
-			if( find_tcp_option(packd.buf+packd.pos_thead+20, init_len, 4)){
-			
-				//everything fine; in case sess->sack_flag == 1, simply keep the sack_flag rolling
-			}
-			else{
-
-				packd.sess->sack_flag = 0;//no sfl sack support
-				if( packd.sfl->sack_flag){
-
-					//furnish with sack flag for subflow sack support
-					if(append_sack(packd.buf+packd.pos_thead+20, &init_len)){
-						packd.tcplen += 2;
-						packd.pos_pay += 2;
-						packd.totlen += 2;
-					}
-				}
-			}
-		}
-		else{
-			if( find_tcp_option(packd.buf+packd.pos_thead+20, init_len, 4)){
-			
-				//ensure no sess->sack support
-				if(eliminate_tcp_option(packd.buf+packd.pos_thead+20, &init_len, 4)){
-					packd.tcplen -= 2;
-					packd.pos_pay -= 2;
-					packd.totlen -= 2;
-				}
-			}
-			else{
-
-				//everthing fine
-			}
-		}
-
-		//find window scale factor
-		unsigned char scaling_factor = find_window_scaling(packd.buf+packd.pos_thead+20, &init_len);
-		packd.sess->init_window_loc = ntohs(packd.tcph->th_win);
-		packd.sess->scaling_factor_loc = scaling_factor;
-		packd.sess->curr_window_loc = packd.sess->init_window_loc>>scaling_factor;
-
-		//buffer initial tcp options until the session has been created
-		unsigned char init_opt[40];
-		memmove(init_opt, packd.buf+packd.pos_thead+20, init_len);
-
-		//create TPcap option and append to packd.mptcp_opt_buf (which is still zero)
-		//if too long, kill the whole MPTCP idea and fallback to ordinary TCP mode
-		create_key(packd.sess->key_loc);
-		create_idsn_token(packd.sess->key_loc, &packd.sess->idsn_loc, &packd.sess->token_loc);
-
-		packd.sess->offset_loc = ntohl(packd.tcph->th_seq) - packd.sess->idsn_loc;
-		packd.sess->highest_dsn_loc = packd.sess->idsn_loc;
-
-
-		struct session_parms *sess_parm;
-		sess_parm = create_session_parm(packd.sess->token_loc, &packd.ft, 1);
-		if(sess_parm == NULL){
-			sprintf(msg_buf,"session_pre_syn_rec_1 returns NULL when creating session_parm, sess_id=%u", packd.sess->index);
-			add_msg(msg_buf);
-
-		}
-
-
-		if( !create_MPcap(packd.mptcp_opt_buf+packd.mptcp_opt_len, packd.sess->key_loc, NULL) ){
-
-			sprintf(msg_buf, "session_pre_syn_rec_1: cannot create MPcap since option too long, len=%u, sess_id=%u", packd.mptcp_opt_len, packd.sess->index);
-			add_msg(msg_buf);	
-			execute_sess_teardown(packd.sess);
-			set_verdict(1,0,0);
-			return 0;
-		}
-
-		packd.sfl->isn_loc = ntohl(packd.tcph->th_seq) - OFFSET_TCP_SN;//same as tcp sn
-		packd.sfl->offset_loc = packd.sess->idsn_loc - packd.sfl->isn_loc;
-		packd.sfl->tcp_state = SYN_REC;
-
-		packd.sess->init_top_len = init_len;//these are buffered inital options
-		memmove(packd.sess->init_top_data,init_opt, init_len);//these are the compacted inital options
-
-		packd.sess->sess_state = SYN_REC;		
-
-		packd.sfl->highest_sn_loc = ntohl(packd.tcph->th_seq) - packd.sess->offset_loc - packd.sfl->offset_loc;
-		packd.sfl->highest_an_loc = packd.sfl->highest_sn_loc;
-		packd.sfl->highest_an_rem = ntohl(packd.tcph->th_ack) - packd.sess->offset_rem - packd.sfl->offset_rem; 
-		packd.sfl->highest_sn_rem = packd.sfl->highest_an_rem; 
-
-		packd.tcph->th_seq = htonl(packd.sfl->highest_sn_loc);
-		packd.tcph->th_ack = htonl(packd.sfl->highest_an_rem);
-		
-
-		if(!output_data_mptcp()){
-			set_verdict(1,0,0);
-			sprintf(msg_buf, "session_pre_syn_rec_1: output_data_mptcp fails, sfl_id=%u, sess_id=%u", packd.sfl->index, packd.sess->index);
-			add_msg(msg_buf);
-			return 0;
-		}
-
-		//buffer packet in case retransmission occurs
-		cache_packet_header();
-		
-		packd.sess->sess_state = SYN_REC;
-		sprintf(msg_buf, "session_pre_syn_rec_1: PRE_SYN_REC_1 -> SYN_REC for sess_id=%u", packd.sess->index);
-		add_msg(msg_buf);	
-		set_verdict(1,1,1);
-	
-
-		sprintf(msg_buf, "pre_syn_rec: isn_loc=%lu, isn_rem=%lu, idsn_loc=%lu, idsn_rem=%lu, sfl_seq=%lu, sfl_an=%lu",
-			(long unsigned) packd.sfl->isn_loc, (long unsigned) packd.sfl->isn_rem, 
-			(long unsigned) packd.sess->idsn_loc, (long unsigned) packd.sess->idsn_rem,
-			(long unsigned) ntohl(packd.tcph->th_seq),
-			(long unsigned) ntohl(packd.tcph->th_ack));
-		add_msg(msg_buf);
-
-		return 1;
+int session_pre_syn_rec_1() {
+	if(!packd.syn || !packd.ack) {
+		set_verdict(1,0,0);
+		return 0;
 	}
-	set_verdict(1,0,0);
-	return 0;
+
+	if(packd.hook < 3 && packd.fwd_type == M_TO_T){
+		set_verdict(1,0,0);
+		return;
+	}
+
+	//end to end MPTCP			
+	if(packd.hook == 2 && packd.fwd_type == T_TO_M && packd.nb_mptcp_options > 0) {
+		delete_subflow(&packd.ft);
+		delete_session_parm(packd.sess->token_loc);
+		delete_session(&packd.sess->ft, 0);
+		set_verdict(1,0,0);
+		return;			
+	}
+
+	packd.sfl = packd.sess->act_subflow;		
+
+	unsigned char init_len = packd.tcplen - 20;
+	manipulate_mss(packd.buf+packd.pos_thead+20, &init_len);
+
+
+	//check sack support for subflow
+	unsigned char len = packd.tcplen-20;
+	if(DO_SACK) {
+		if( find_tcp_option(packd.buf+packd.pos_thead+20, init_len, 4)) {
+			//everything fine; in case sess->sack_flag == 1, simply keep the sack_flag rolling
+		} else {
+			packd.sess->sack_flag = 0;//no sfl sack support
+			if( packd.sfl->sack_flag) {
+				//furnish with sack flag for subflow sack support
+				if(append_sack(packd.buf+packd.pos_thead+20, &init_len)) {
+					packd.tcplen += 2;
+					packd.pos_pay += 2;
+					packd.totlen += 2;
+				}
+			}
+		}
+	} else {
+		if( find_tcp_option(packd.buf+packd.pos_thead+20, init_len, 4)) {
+			//ensure no sess->sack support
+			if(eliminate_tcp_option(packd.buf+packd.pos_thead+20, &init_len, 4)) {
+				packd.tcplen -= 2;
+				packd.pos_pay -= 2;
+				packd.totlen -= 2;
+			}
+		}
+	}
+
+	//find window scale factor
+	unsigned char scaling_factor = find_window_scaling(packd.buf+packd.pos_thead+20, &init_len);
+	packd.sess->init_window_loc = ntohs(packd.tcph->th_win);
+	packd.sess->scaling_factor_loc = scaling_factor;
+	packd.sess->curr_window_loc = packd.sess->init_window_loc>>scaling_factor;
+
+	//buffer initial tcp options until the session has been created
+	unsigned char init_opt[40];
+	memmove(init_opt, packd.buf+packd.pos_thead+20, init_len);
+
+	//create TPcap option and append to packd.mptcp_opt_buf (which is still zero)
+	//if too long, kill the whole MPTCP idea and fallback to ordinary TCP mode
+	create_key(packd.sess->key_loc);
+	create_idsn_token(packd.sess->key_loc, &packd.sess->idsn_loc, &packd.sess->token_loc);
+
+	packd.sess->offset_loc = ntohl(packd.tcph->th_seq) - packd.sess->idsn_loc;
+	packd.sess->highest_dsn_loc = packd.sess->idsn_loc;
+
+
+	struct session_parms *sess_parm;
+	sess_parm = create_session_parm(packd.sess->token_loc, &packd.ft, 1);
+	if(sess_parm == NULL){
+		sprintf(msg_buf,"session_pre_syn_rec_1 returns NULL when creating session_parm, sess_id=%u", packd.sess->index);
+		add_msg(msg_buf);
+	}
+
+	if(!create_MPcap(packd.mptcp_opt_buf+packd.mptcp_opt_len, packd.sess->key_loc, NULL)) {
+		sprintf(msg_buf, "session_pre_syn_rec_1: cannot create MPcap since option too long, len=%u, sess_id=%u", packd.mptcp_opt_len, packd.sess->index);
+		add_msg(msg_buf);	
+		execute_sess_teardown(packd.sess);
+		set_verdict(1,0,0);
+		return 0;
+	}
+
+	packd.sfl->isn_loc = ntohl(packd.tcph->th_seq) - OFFSET_TCP_SN;//same as tcp sn
+	packd.sfl->offset_loc = packd.sess->idsn_loc - packd.sfl->isn_loc;
+	packd.sfl->tcp_state = SYN_REC;
+
+	packd.sess->init_top_len = init_len;//these are buffered inital options
+	memmove(packd.sess->init_top_data,init_opt, init_len);//these are the compacted inital options
+
+	packd.sess->sess_state = SYN_REC;		
+
+	packd.sfl->highest_sn_loc = ntohl(packd.tcph->th_seq) - packd.sess->offset_loc - packd.sfl->offset_loc;
+	packd.sfl->highest_an_loc = packd.sfl->highest_sn_loc;
+	packd.sfl->highest_an_rem = ntohl(packd.tcph->th_ack) - packd.sess->offset_rem - packd.sfl->offset_rem; 
+	packd.sfl->highest_sn_rem = packd.sfl->highest_an_rem; 
+
+	packd.tcph->th_seq = htonl(packd.sfl->highest_sn_loc);
+	packd.tcph->th_ack = htonl(packd.sfl->highest_an_rem);
+	
+
+	if(!output_data_mptcp()) {
+		set_verdict(1,0,0);
+		sprintf(msg_buf, "session_pre_syn_rec_1: output_data_mptcp fails, sfl_id=%u, sess_id=%u", packd.sfl->index, packd.sess->index);
+		add_msg(msg_buf);
+		return 0;
+	}
+
+	//buffer packet in case retransmission occurs
+	cache_packet_header();
+	
+	packd.sess->sess_state = SYN_REC;
+	sprintf(msg_buf, "session_pre_syn_rec_1: PRE_SYN_REC_1 -> SYN_REC for sess_id=%u", packd.sess->index);
+	add_msg(msg_buf);	
+	set_verdict(1,1,1);
+
+
+	sprintf(msg_buf, "pre_syn_rec: isn_loc=%lu, isn_rem=%lu, idsn_loc=%lu, idsn_rem=%lu, sfl_seq=%lu, sfl_an=%lu",
+		(long unsigned) packd.sfl->isn_loc, (long unsigned) packd.sfl->isn_rem, 
+		(long unsigned) packd.sess->idsn_loc, (long unsigned) packd.sess->idsn_rem,
+		(long unsigned) ntohl(packd.tcph->th_seq),
+		(long unsigned) ntohl(packd.tcph->th_ack));
+	add_msg(msg_buf);
+
+	return 1;
 }
 
 
@@ -785,68 +743,68 @@ int session_pre_syn_rec_1(){
 //  Target states: ESTABLISHED
 //  Add TP_CAP headers with both ISDNs
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_pre_est(){
+int session_pre_est() {
 
-	if(packd.hook>1 && packd.fwd_type == T_TO_M && !packd.syn && packd.ack && !packd.fin){
+	if(packd.hook<=1 || packd.fwd_type != T_TO_M || packd.syn || !packd.ack || packd.fin) {
+		set_verdict(1,0,0);
+		return 0;
+	}
 
-		packd.sfl = packd.sess->act_subflow;
+	packd.sfl = packd.sess->act_subflow;
 
-		//append IDSNloc and IDSNrem to packd.mptcp_opt_buf (which is still zero)
-		//if too long, kill the whole MPTCP idea and fallback to ordinary TCP mode
-		if( !create_MPcap(packd.mptcp_opt_buf+packd.mptcp_opt_len, packd.sess->key_loc, packd.sess->key_rem) ){
+	//append IDSNloc and IDSNrem to packd.mptcp_opt_buf (which is still zero)
+	//if too long, kill the whole MPTCP idea and fallback to ordinary TCP mode
+	if( !create_MPcap(packd.mptcp_opt_buf+packd.mptcp_opt_len, packd.sess->key_loc, packd.sess->key_rem) ){
 
-			sprintf(msg_buf, "session_pre_est: analyze_MPcap fails. Killing sfl_id=%u and sess_id=%u", packd.sfl->index, packd.sess->index);
-			add_msg(msg_buf);
-			delete_subflow(&packd.ft);
-			delete_session_parm(packd.sess->token_loc);
-			delete_session(&packd.sess->ft, 1);
-			set_verdict(1,0,0);
-			return 0;
-		}
-
-		packd.sess->highest_dsn_loc += 1;
-		packd.sess->last_dan_loc = packd.sess->highest_dsn_loc;
-		packd.sess->highest_dan_loc = packd.sess->highest_dsn_loc;
-	
-		packd.sfl->highest_sn_loc = ntohl(packd.tcph->th_seq) - packd.sess->offset_loc - packd.sfl->offset_loc;
-		packd.sfl->highest_an_rem = ntohl(packd.tcph->th_ack) - packd.sess->offset_rem - packd.sfl->offset_rem ;
-		packd.sfl->highest_sn_rem = packd.sfl->highest_an_rem;
-		packd.sfl->highest_an_loc = packd.sfl->highest_sn_loc;
-
-
-		packd.tcph->th_seq = htonl(packd.sfl->highest_sn_loc);
-		packd.tcph->th_ack = htonl(packd.sfl->highest_an_rem);
-
-		packd.sess->curr_window_loc = ntohs(packd.tcph->th_win);
-		packd.sfl->tcp_state = ESTABLISHED;
-		packd.sess->sess_state = ESTABLISHED;
-
-		if(!output_data_mptcp()){
-			set_verdict(1,0,0);
-			sprintf(msg_buf, "session_pre_est: output_data_mptcp fails, sess_id=%u", packd.sess->index);
-			add_msg(msg_buf);
-			return 0;
-		}
-
-		//buffer packet in case retransmission occurs
-		cache_packet_header();
-
-		sprintf(msg_buf, "session_pre_est: PRE_EST->ESTABLISHED - sess->sack=%d, sfl->sack=%d, sess_id=%u, sfl_id=%u",
-			packd.sess->sack_flag, packd.sfl->sack_flag, packd.sess->index, packd.sfl->index);
+		sprintf(msg_buf, "session_pre_est: analyze_MPcap fails. Killing sfl_id=%u and sess_id=%u", packd.sfl->index, packd.sess->index);
 		add_msg(msg_buf);
-		set_verdict(1,1,1);
+		delete_subflow(&packd.ft);
+		delete_session_parm(packd.sess->token_loc);
+		delete_session(&packd.sess->ft, 1);
+		set_verdict(1,0,0);
+		return 0;
+	}
 
-		sprintf(msg_buf, "session_pre_est: isn_loc=%lu, isn_rem=%lu, idsn_loc=%lu, idsn_rem=%lu, sfl_seq=%lu, sfl_an=%lu",
-			(long unsigned) packd.sfl->isn_loc, (long unsigned) packd.sfl->isn_rem, 
-			(long unsigned) packd.sess->idsn_loc, (long unsigned) packd.sess->idsn_rem,
-			(long unsigned) ntohl(packd.tcph->th_seq),
-			(long unsigned) ntohl(packd.tcph->th_ack));
+	packd.sess->highest_dsn_loc += 1;
+	packd.sess->last_dan_loc = packd.sess->highest_dsn_loc;
+	packd.sess->highest_dan_loc = packd.sess->highest_dsn_loc;
+
+	packd.sfl->highest_sn_loc = ntohl(packd.tcph->th_seq) - packd.sess->offset_loc - packd.sfl->offset_loc;
+	packd.sfl->highest_an_rem = ntohl(packd.tcph->th_ack) - packd.sess->offset_rem - packd.sfl->offset_rem ;
+	packd.sfl->highest_sn_rem = packd.sfl->highest_an_rem;
+	packd.sfl->highest_an_loc = packd.sfl->highest_sn_loc;
+
+
+	packd.tcph->th_seq = htonl(packd.sfl->highest_sn_loc);
+	packd.tcph->th_ack = htonl(packd.sfl->highest_an_rem);
+
+	packd.sess->curr_window_loc = ntohs(packd.tcph->th_win);
+	packd.sfl->tcp_state = ESTABLISHED;
+	packd.sess->sess_state = ESTABLISHED;
+
+	if(!output_data_mptcp()){
+		set_verdict(1,0,0);
+		sprintf(msg_buf, "session_pre_est: output_data_mptcp fails, sess_id=%u", packd.sess->index);
 		add_msg(msg_buf);
-	
-		return 1;
-	}	
-	set_verdict(1,0,0);
-	return 0;
+		return 0;
+	}
+
+	//buffer packet in case retransmission occurs
+	cache_packet_header();
+
+	sprintf(msg_buf, "session_pre_est: PRE_EST->ESTABLISHED - sess->sack=%d, sfl->sack=%d, sess_id=%u, sfl_id=%u",
+		packd.sess->sack_flag, packd.sfl->sack_flag, packd.sess->index, packd.sfl->index);
+	add_msg(msg_buf);
+	set_verdict(1,1,1);
+
+	sprintf(msg_buf, "session_pre_est: isn_loc=%lu, isn_rem=%lu, idsn_loc=%lu, idsn_rem=%lu, sfl_seq=%lu, sfl_an=%lu",
+		(long unsigned) packd.sfl->isn_loc, (long unsigned) packd.sfl->isn_rem, 
+		(long unsigned) packd.sess->idsn_loc, (long unsigned) packd.sess->idsn_rem,
+		(long unsigned) ntohl(packd.tcph->th_seq),
+		(long unsigned) ntohl(packd.tcph->th_ack));
+	add_msg(msg_buf);
+
+	return 1;
 }
 
 
@@ -856,11 +814,7 @@ int session_pre_est(){
 //  Verify both ISDNs on TP_CAP header
 //++++++++++++++++++++++++++++++++++++++++++++++++
 int session_syn_rec(){
-
-
 	if(packd.hook<3 && packd.fwd_type == M_TO_T && !packd.syn && packd.ack && packd.nb_mptcp_options>0){
-
-
 		//get rem IDSN from MPTCP CAP option
 		uint32_t key_rem[2];
 		uint32_t key_loc[2];
@@ -906,7 +860,6 @@ int session_syn_rec(){
 	}
 	//consider SYN retransmission
 	if(packd.hook > 1 && packd.fwd_type == T_TO_M && packd.syn && packd.ack){
-		
 		retransmit_cached_packet_header();
 		set_verdict(1,1,1);
 		return;
@@ -925,19 +878,14 @@ int session_syn_rec(){
 int session_established(){
 
 	//data fin -> FIN_WAIT_1
-
-	if(packd.hook>1 && packd.fwd_type == T_TO_M){
+	if(packd.hook>1 && packd.fwd_type == T_TO_M) {
 		if(packd.syn && packd.ack){
-		
 			retransmit_cached_packet_header();
 			set_verdict(1,1,1);
 			return;
 		}
 
-
-
-		if(dssopt_out.Fflag){
-
+		if(dssopt_out.Fflag) {
 			packd.sess->fin_dsn_loc = packd.sess->highest_dsn_loc - 1;	
 			packd.sess->sess_state = FIN_WAIT_1;
 			sprintf(msg_buf, "session_established: ESTABLISHED->FIN_WAIT_1, sess_id=%u", packd.sess->index );
@@ -947,11 +895,9 @@ int session_established(){
 	}
 	
 	//Evaluation of DSS on INPUT
-	if(packd.hook<3 && packd.fwd_type == M_TO_T){
-
-		if(dssopt_in.present == 1){
-
-			if(dssopt_in.Fflag){
+	if(packd.hook<3 && packd.fwd_type == M_TO_T) {
+		if(dssopt_in.present == 1) {
+			if(dssopt_in.Fflag) {
 				packd.sess->fin_dsn_rem = packd.sess->highest_dsn_rem - 1;
 				packd.sess->sess_state = PRE_CLOSE_WAIT;
 				sprintf(msg_buf, "session_established: ESTABLISHED->PRE_CLOSE_WAIT, sess_id=%u", packd.sess->index );
@@ -968,35 +914,26 @@ int session_established(){
 //session FIN_WAIT_1
 //  Target states: FIN_WAIT_2, PRE_CLOSING, PRE_TIME_WAIT
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_fin_wait_1(){
-
-	
+int session_fin_wait_1() {
 	//Evaluation of DSS on INPUT
-	if(packd.hook<3 && packd.fwd_type == M_TO_T){
-
-
+	if(packd.hook<3 && packd.fwd_type == M_TO_T) {
 		//get rem IDSN from MPTCP CAP option
-		if( dssopt_in.present == 1){
-
-			
+		if( dssopt_in.present == 1) {
 			int data_ack = (dssopt_in.Aflag && sn_smaller(packd.sess->fin_dsn_loc, dssopt_in.dan));
-						
-			if(data_ack){
+			if(data_ack) {
 				//terminate_all_subflows(packd.sess);
-				if(dssopt_in.Fflag){
+				if(dssopt_in.Fflag) {
 					packd.sess->fin_dsn_rem = packd.sess->highest_dsn_rem - 1;
 					packd.sess->sess_state = PRE_TIME_WAIT;
 					sprintf(msg_buf, "session_fin_wait_1: FIN_WAIT_1->PRE_TIME_WAIT, sess_id=%u", packd.sess->index );
 					add_msg(msg_buf);
-				}
-				else{
+				} else {
 					packd.sess->sess_state = FIN_WAIT_2;
 					sprintf(msg_buf, "session_fin_wait_1: FIN_WAIT_1->FIN_WAIT_2, sess_id=%u", packd.sess->index );
 					add_msg(msg_buf);
 				}
-			}	
-			else{
-				if(dssopt_in.Fflag){
+			} else {
+				if(dssopt_in.Fflag) {
 					packd.sess->fin_dsn_rem = packd.sess->highest_dsn_rem - 1;
 					packd.sess->sess_state = PRE_CLOSING;
 					sprintf(msg_buf, "session_fin_wait_1: FIN_WAIT_1->PRE_CLOSING, sess_id=%u", packd.sess->index );
@@ -1015,16 +952,12 @@ int session_fin_wait_1(){
 //session FIN_WAIT_2
 //  Target states: PRE_TIME_WAIT
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_fin_wait_2(){
-
-	
+int session_fin_wait_2() {
 	//Evaluation of DSS on INPUT
-	if(packd.hook<3 && packd.fwd_type == M_TO_T){
-
+	if(packd.hook<3 && packd.fwd_type == M_TO_T) {
 		//get rem IDSN from MPTCP CAP option
-		if( dssopt_in.present == 1 ){
-
-			if(dssopt_in.Fflag){
+		if( dssopt_in.present == 1 ) {
+			if(dssopt_in.Fflag) {
 				packd.sess->fin_dsn_rem = packd.sess->highest_dsn_rem - 1;
 				packd.sess->sess_state = PRE_TIME_WAIT;
 				sprintf(msg_buf, "session_fin_wait_2: FIN_WAIT_2->PRE_TIME_WAIT, sess_id=%u", packd.sess->index );
@@ -1041,29 +974,24 @@ int session_fin_wait_2(){
 //session PRE_CLOSE_WAIT
 //  Target states: CLOSE WAIT
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_pre_close_wait(){
-
-	if(packd.hook>1 && packd.fwd_type == T_TO_M){
-
+int session_pre_close_wait() {
+	if(packd.hook>1 && packd.fwd_type == T_TO_M) {
 		int data_ack = (packd.ack && sn_smaller(packd.sess->fin_dsn_rem, packd.dan_curr_rem));
-		if(data_ack){
-
-			if(packd.fin==1){
+		if(data_ack) {
+			if(packd.fin==1) {
 				packd.sess->fin_dsn_loc = packd.sess->highest_dsn_loc - 1;
 				packd.sess->sess_state = LAST_ACK;
 				sprintf(msg_buf, "session_pre_close_wait: PRE_CLOSE_WAIT->LAST_ACK, sess_id=%u", packd.sess->index );
 				add_msg(msg_buf);
-			}
-			else{
+			} else {
 				packd.sess->sess_state = CLOSE_WAIT;
 				sprintf(msg_buf, "session_pre_close_wait: PRE_CLOSE_WAIT->CLOSE_WAIT, sess_id=%u", packd.sess->index );
 				add_msg(msg_buf);
 			}
 	
 			return 1;
-		}
-		else{
-			if(packd.fin==1){
+		} else {
+			if(packd.fin==1) {
 				packd.sess->fin_dsn_rem = packd.sess->highest_dsn_rem - 1;
 				packd.sess->sess_state = PRE_CLOSING;				
 				sprintf(msg_buf, "session_pre_close_wait: PRE_CLOSE_WAIT->PRE_CLOSING, sess_id=%u", packd.sess->index );
@@ -1082,22 +1010,19 @@ int session_pre_close_wait(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 int session_pre_time_wait(){
 
-	if(packd.hook>1 && packd.fwd_type == T_TO_M){
+	if(packd.hook<=1 || packd.fwd_type != T_TO_M)
+		return 0;
 
-		int data_ack = (packd.ack && sn_smaller(packd.sess->fin_dsn_rem, packd.dan_curr_rem));
-		if(data_ack){
-
-			terminate_all_subflows(packd.sess);
-			create_sess_close_event(&packd.sess->ft);
-			start_sess_teardown_timer(packd.sess);
-			packd.sess->sess_state = TIME_WAIT;
-			sprintf(msg_buf, "session_pre_time_wait: sess id=%d entering sess_state TIME_WAIT", packd.sess->index );
-			add_msg(msg_buf);	
-			return 1;
-		}
-	}
-
-	return 0;
+	int data_ack = (packd.ack && sn_smaller(packd.sess->fin_dsn_rem, packd.dan_curr_rem));
+	if(!data_ack)
+		return 0;
+	terminate_all_subflows(packd.sess);
+	create_sess_close_event(&packd.sess->ft);
+	start_sess_teardown_timer(packd.sess);
+	packd.sess->sess_state = TIME_WAIT;
+	sprintf(msg_buf, "session_pre_time_wait: sess id=%d entering sess_state TIME_WAIT", packd.sess->index );
+	add_msg(msg_buf);	
+	return 1;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1106,22 +1031,17 @@ int session_pre_time_wait(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 int session_pre_closing(){
 
-	if(packd.hook>1 && packd.fwd_type == T_TO_M){
-
-
+	if(packd.hook>1 && packd.fwd_type == T_TO_M) {
 		int data_ack = (packd.ack && sn_smaller(packd.sess->fin_dsn_rem, packd.dan_curr_rem));
-		if(data_ack){
-
+		if(data_ack) {
 			packd.sess->sess_state = CLOSING;
 			sprintf(msg_buf, "session_pre_closing: ess id=%d entering PRE_CLOSING->CLOSING", packd.sess->index );
 			add_msg(msg_buf);	
 			return 1;
 		}
-	}
-	else{
-
+	} else {
 		int data_ack = (dssopt_in.Aflag && sn_smaller(packd.sess->fin_dsn_loc, dssopt_in.dan));
-		if(data_ack){
+		if(data_ack) {
 			terminate_all_subflows(packd.sess);
 			packd.sess->sess_state = PRE_TIME_WAIT;
 			sprintf(msg_buf, "session_closing: sess id=%d entering sess_state PRE_TIME_WAIT", packd.sess->index );
@@ -1138,47 +1058,38 @@ int session_pre_closing(){
 //session CLOSING
 //  Target states: TIME WAIT
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_closing(){
-
-	
+int session_closing() {
 	//Evaluation of DSS on INPUT
-	if(packd.hook<3 && packd.fwd_type == M_TO_T ){
+	if(packd.hook>=3 || packd.fwd_type != M_TO_T)
+		return 0;
+	if(dssopt_in.present != 1)
+		return 0;
+	int data_ack = (dssopt_in.Aflag && sn_smaller(packd.sess->fin_dsn_loc, dssopt_in.dan));
+	if(!data_ack)
+		return 0;
 
-		if( dssopt_in.present == 1 ){
-
-
-			int data_ack = (dssopt_in.Aflag && sn_smaller(packd.sess->fin_dsn_loc, dssopt_in.dan));
-			if(data_ack){
-				terminate_all_subflows(packd.sess);
-				create_sess_close_event(&packd.sess->ft);
-				start_sess_teardown_timer(packd.sess);
-				packd.sess->sess_state = TIME_WAIT;
-				sprintf(msg_buf, "session_closing: sess id=%d entering sess_state TIME_WAIT", packd.sess->index);
-				add_msg(msg_buf);
-				return 1;
-			}
-		}
-	}
-	return 0;
+	terminate_all_subflows(packd.sess);
+	create_sess_close_event(&packd.sess->ft);
+	start_sess_teardown_timer(packd.sess);
+	packd.sess->sess_state = TIME_WAIT;
+	sprintf(msg_buf, "session_closing: sess id=%d entering sess_state TIME_WAIT", packd.sess->index);
+	add_msg(msg_buf);
+	return 1;
 }
-
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //session CLOSE_WAIT
 //  Target states:LAST ACK
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_close_wait(){
+int session_close_wait() {
+	if(packd.hook<=1 || packd.fwd_type != T_TO_M || !packd.fin)
+		return 0;
 
-	if(packd.hook>1 && packd.fwd_type == T_TO_M && packd.fin){
+	packd.sess->sess_state = LAST_ACK;
 
-		packd.sess->sess_state = LAST_ACK;
-
-		sprintf(msg_buf, "session_close_wait: CLOSE_WAIT->LAST_ACK, sess_id=%u", packd.sess->index );
-		add_msg(msg_buf);
-		return 1;
-	}
-
-	return 0;
+	sprintf(msg_buf, "session_close_wait: CLOSE_WAIT->LAST_ACK, sess_id=%u", packd.sess->index );
+	add_msg(msg_buf);
+	return 1;
 }
 
 
@@ -1186,37 +1097,33 @@ int session_close_wait(){
 //session LAST_ACK
 //  Target states: TIME WAIT
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_last_ack(){
+int session_last_ack() {
 
-	
 	//Evaluation of DSS on INPUT
-	if(packd.hook<3 && packd.fwd_type == M_TO_T ){
+	if(packd.hook>=3 || packd.fwd_type != M_TO_T )
+		return 0;
 
-		if( dssopt_in.present == 1 ){
+	if( dssopt_in.present != 1 )
+		return 0;
 
-		int data_ack = (dssopt_in.Aflag && sn_smaller(packd.sess->fin_dsn_loc, dssopt_in.dan));
+	int data_ack = (dssopt_in.Aflag && sn_smaller(packd.sess->fin_dsn_loc, dssopt_in.dan));
+	if(!data_ack)
+		return 0;
 
-			if(data_ack){
-				terminate_all_subflows(packd.sess);
-				sprintf(msg_buf, "session_last_ack: LAST_ACK->TIME_WAIT, sess_id=%u", packd.sess->index );
-				add_msg(msg_buf);
-				packd.sess->sess_state = TIME_WAIT;
-				create_sess_close_event(&packd.sess->ft);
-				start_sess_teardown_timer(packd.sess);
+	terminate_all_subflows(packd.sess);
+	sprintf(msg_buf, "session_last_ack: LAST_ACK->TIME_WAIT, sess_id=%u", packd.sess->index );
+	add_msg(msg_buf);
+	packd.sess->sess_state = TIME_WAIT;
+	create_sess_close_event(&packd.sess->ft);
+	start_sess_teardown_timer(packd.sess);
 
-				return 1;
-			}
-		}
-	}
-
-	return 0;
+	return 1;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //session TIME_WAIT
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int session_time_wait(){
-
+int session_time_wait() {
 	packd.verdict = 0;
 	return 1;	
 }
@@ -1226,14 +1133,12 @@ int session_time_wait(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //terminate all subflows
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void terminate_all_subflows(struct session *sess){
-
+void terminate_all_subflows(struct session *sess) {
 	sprintf(msg_buf, "terminate_all_subflows: terminating for sess_id=%u", sess->index);
 	add_msg(msg_buf);
 	struct subflow *sfl;
 	int i;
-	for(i=0; i< sess->pA_sflows.number; i++){
-
+	for(i=0; i< sess->pA_sflows.number; i++) {
 		sfl = (struct subflow*) (*(packd.sess->pA_sflows.pnts + i));
 
 		if(sfl != NULL && sfl->tcp_state <= CLOSE_WAIT) {
@@ -1243,18 +1148,15 @@ void terminate_all_subflows(struct session *sess){
 			
 		}
 	}
-
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //int check_sess_close_conditions(struct session *sess)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int check_sess_close_conditions(struct session *sess){
-
+int check_sess_close_conditions(struct session *sess) {
 	struct subflow *sfl;
 	int i;
 	for(i=0; i< sess->pA_sflows.number; i++){
-
 		sfl = (struct subflow*) (*(sess->pA_sflows.pnts + i));
 
 		if(sfl != NULL) return 0;
@@ -1268,8 +1170,7 @@ int check_sess_close_conditions(struct session *sess){
 //send_reset_session()
 // Sends reset to the TCP mother socket
 //++++++++++++++++++++++++++++++++++++++++++++++++
- int send_reset_session(struct session *sess){
-
+ int send_reset_session(struct session *sess) {
 	struct fourtuple* ftmir = malloc(sizeof(struct fourtuple));
 	memcpy(ftmir, &sess->ft, sizeof(struct fourtuple));
 	mirrorFourtuple(ftmir); 
@@ -1295,7 +1196,7 @@ struct session* create_session(
 		uint32_t offset_rem, 
 		size_t sess_state,
 		struct subflow *sflx,
-		size_t overwrite){
+		size_t overwrite) {
 		
 	static unsigned int index = 0;
 
@@ -1305,7 +1206,7 @@ struct session* create_session(
 
 	if(overwrite == 0 && sess != NULL) return NULL;
 
-	if(sess == NULL){
+	if(sess == NULL) {
 		sess = (struct session*) malloc( sizeof(struct session));
 		sess->ft = *ft1;
 		HASH_ADD(hh, sess_hash, ft, sizeof(struct fourtuple), sess);
@@ -1379,17 +1280,15 @@ struct session* create_session(
 struct session_parms* create_session_parm(
 		uint32_t token,
 		struct fourtuple *ft1,
-		int overwrite){
+		int overwrite) {
 		
 	struct session_parms *sess_parm;
 	HASH_FIND(hh, sess_parms_hash, &token, sizeof(long unsigned int), sess_parm);
 
-	if(overwrite == 0 && sess_parm != NULL) {
+	if(overwrite == 0 && sess_parm != NULL)
 		return NULL;
-	}
 
-	if(sess_parm == NULL){
-
+	if(sess_parm == NULL) {
 		sess_parm = (struct session_parms*) malloc( sizeof(struct session_parms));
 		sess_parm->token = token;
 		HASH_ADD(hh, sess_parms_hash, token, sizeof(long unsigned int), sess_parm);
@@ -1406,7 +1305,7 @@ struct session_parms* create_session_parm(
 //	Returns 0 if delete successful
 //	Returns -1 if session not found
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int delete_session(struct fourtuple *ft1, int rst_sess){
+int delete_session(struct fourtuple *ft1, int rst_sess) {
 
 
 	struct session *sess;
@@ -1418,8 +1317,7 @@ int delete_session(struct fourtuple *ft1, int rst_sess){
 	int i;
 	struct subflow *sfl;
 	int nmb = sess->pA_sflows.number;
-	while(sess->pA_sflows.number > 0){
-
+	while(sess->pA_sflows.number > 0) {
 		sfl = (struct subflow*) sess->pA_sflows.pnts[0];
 
 		delete_subflow(&sfl->ft);//also deletes pnt in pA_sflows
@@ -1444,7 +1342,7 @@ int delete_session(struct fourtuple *ft1, int rst_sess){
 //	Returns 0 if delete successful
 //	Returns -1 if session not found
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int delete_session_parm(uint32_t token){
+int delete_session_parm(uint32_t token) {
 
 	struct session_parms *sess_parm;
 	HASH_FIND(hh, sess_parms_hash, &token, sizeof(uint32_t), sess_parm);
@@ -1461,8 +1359,7 @@ int delete_session_parm(uint32_t token){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void delete_all_sessions()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int delete_all_sessions(){
-
+int delete_all_sessions() {
 	struct fourtuple ft;
 	struct session *curr_sess, *tmp_sess;
 	curr_sess = NULL;
@@ -1482,7 +1379,8 @@ int delete_all_sessions(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //SESSION: find_subflow_in_session(struct session *sess, int sfl_index_provided, size_t sfl_index, int must_be_cand)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-struct subflow* find_subflow_in_session(struct session *sess, int sfl_index_provided, size_t sfl_index, int must_be_cand){
+struct subflow* find_subflow_in_session(struct session *sess,
+		int sfl_index_provided, size_t sfl_index, int must_be_cand) {
 
 	//finds subflow: checks if specified subflow index in cmcmd exists and is found in session, and if it is canddiate
 	//	if not, it picks the first candidate it finds.
@@ -1491,21 +1389,18 @@ struct subflow* find_subflow_in_session(struct session *sess, int sfl_index_prov
 	struct subflow *sflx = NULL;
 	struct subflow *sfly = NULL;
 
-	while(j1<sess->pA_sflows.number && sflx == NULL){
-
+	while(j1<sess->pA_sflows.number && sflx == NULL) {
 		struct subflow *sfl_curr = (struct subflow*) sess->pA_sflows.pnts[j1];
-		if(  sfl_curr != NULL) {
-
+		if(sfl_curr != NULL) {
 			if( (sfl_curr->index == sfl_index || !sfl_index_provided) 
-					&& (sfl_curr->act_state == 0 || !must_be_cand) \
+					&& (sfl_curr->act_state == 0 || !must_be_cand)
 					&& sfl_curr->tcp_state >= ESTABLISHED && sfl_curr->tcp_state <= CLOSE_WAIT) {
 				sflx = sfl_curr;
 				break;
-			}
-			else{
+			} else {
 				if( sfly == NULL 
-						&& (sfl_curr->act_state == 0 || !must_be_cand)\
-						&& sfl_curr->tcp_state >= ESTABLISHED && sfl_curr->tcp_state <= CLOSE_WAIT){
+						&& (sfl_curr->act_state == 0 || !must_be_cand)
+						&& sfl_curr->tcp_state >= ESTABLISHED && sfl_curr->tcp_state <= CLOSE_WAIT) {
 
 					 sfly = sfl_curr; 
 	/*
@@ -1539,10 +1434,8 @@ struct subflow* find_subflow_in_session(struct session *sess, int sfl_index_prov
 	//check if interface is up
 	char iface[MAX_LENGTH_IFACE_NAME];
 	if( find_interface(&if_tab1, iface, sflx->ft.ip_loc) ){
-	
 		return sflx;
-	}
-	else{
+	} else {
 		sprintf(msg_buf, "find_subflow_in_session: found sfl_id=%d in sess_id =%d - but interface \"%s\" not active!", sflx->index, sess->index, iface);
 		add_msg(msg_buf);
 		return NULL;
@@ -1554,8 +1447,7 @@ struct subflow* find_subflow_in_session(struct session *sess, int sfl_index_prov
 //void add_subflow_to_session(struct subflow *sfl, struct session * sess)
 //	Returns -1 if session not found
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void add_subflow_to_session(struct subflow *sfl, struct session * sess){
-
+inline void add_subflow_to_session(struct subflow *sfl, struct session * sess) {
 	sfl->sess = sess;
 	add_pnt_pA(&sess->pA_sflows, sfl);
 	return;
@@ -1614,9 +1506,7 @@ int switch_active_sfl(struct session *sess, struct subflow *new_sfl){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //SESSMAN: break_active_sfl: make active sfl to last sfl and new_sfl to active sfl
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void break_active_sfl(struct session *sess, struct subflow *new_sfl){
-
-
+void break_active_sfl(struct session *sess, struct subflow *new_sfl) {
 	sess->last_subflow = sess->act_subflow;
 	sess->last_subflow->act_state = CANDIDATE;
 	sess->last_subflow->tcp_state = TIME_WAIT;
@@ -1625,7 +1515,6 @@ void break_active_sfl(struct session *sess, struct subflow *new_sfl){
 	sess->act_subflow = new_sfl;
 	sess->act_subflow->act_state = ACTIVE;
 	sess->act_subflow->ack_state = 1;//to ensure that ACKs are sent out
-
 
 	sess->cdsn_loc = sess->highest_dan_loc-1;
 
@@ -1636,8 +1525,6 @@ void break_active_sfl(struct session *sess, struct subflow *new_sfl){
 			sess->last_subflow->index, sess->act_subflow->index);
 	add_msg(msg_buf);
 
-	return;
-
 }
 
 
@@ -1645,8 +1532,7 @@ void break_active_sfl(struct session *sess, struct subflow *new_sfl){
 //SESSMAN: break_during_switch: if break of last_subflow happens during switch
 //forces switch to end by doing cross-subflow retransmission of last_subflow data
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void break_during_switch(struct session *sess){
-
+void break_during_switch(struct session *sess) {
 	//last_subflow has not been completed!
 	//map everything from last_subflow to act_subflow: leads to non-monotonous mapping
 
@@ -1660,8 +1546,7 @@ void break_during_switch(struct session *sess){
 //create_break_event: creates event when all subflows are down
 //  fourtuple is that of session
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_sess_break_event(struct fourtuple *ft){
-
+void create_sess_break_event(struct fourtuple *ft) {
 	//create break event data
 	struct break_event_data *brk = malloc(sizeof(struct break_event_data));
 	brk->ft = *ft;
@@ -1674,16 +1559,13 @@ void create_sess_break_event(struct fourtuple *ft){
 	//insert event
 	time_t dsec = BREAK_TIME_INTERVAL; 
 	insert_event(evt, dsec, 0);
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //handle_break_event: executes or terminates break message retransmission 
 //	checks if time for teardown has arrived
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void handle_sess_break_event(struct tp_event *evt){
-
+void handle_sess_break_event(struct tp_event *evt) {
 	struct break_event_data *brk = (struct break_event_data*) evt->data;
 
 	struct session *sess;
@@ -1692,28 +1574,25 @@ void handle_sess_break_event(struct tp_event *evt){
 		delete_sess_break_event(evt);
 		return;	
 	}
-	if(check_sess_teardown_timer(sess)) execute_sess_teardown(sess);
-	else{
+	if(check_sess_teardown_timer(sess)) {
+		execute_sess_teardown(sess);
+	} else {
 		if(sess->act_subflow->broken && sess->conman_state == 'B') {
 			create_sess_break_event(&brk->ft);
 		}
 	}
 	
 	delete_sess_break_event(evt);
-	return;	
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //delete_break_event
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void delete_sess_break_event(struct tp_event *evt){
-
+void delete_sess_break_event(struct tp_event *evt) {
 	struct break_event_data *brk = (struct break_event_data*) evt->data;
 	free( brk );
 	free( evt );
-	return;
-
 }
 
 
@@ -1721,8 +1600,7 @@ void delete_sess_break_event(struct tp_event *evt){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //create_sess_close_event: creates event for closing session in TIME_WAIT
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_sess_close_event(struct fourtuple *ft){
-
+void create_sess_close_event(struct fourtuple *ft) {
 	//create close event data
 	struct sess_close_event_data *cls = malloc(sizeof(struct sess_close_event_data));
 	cls->ft = *ft;
@@ -1735,15 +1613,12 @@ void create_sess_close_event(struct fourtuple *ft){
 	//insert event
 	time_t dsec = CLOSE_TIME_INTERVAL; 
 	insert_event(evt, dsec, 0);
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //handle_sess_close_event: executes or terminates close event 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void handle_sess_close_event(struct tp_event *evt){
-
+void handle_sess_close_event(struct tp_event *evt) {
 	struct sess_close_event_data *cls = (struct sess_close_event_data*) evt->data;
 
 	struct session *sess;
@@ -1753,17 +1628,13 @@ void handle_sess_close_event(struct tp_event *evt){
 		return;	
 	}
 
-	if(check_sess_close_conditions(sess)){
-
+	if(check_sess_close_conditions(sess)) {
 		delete_sess_close_event(evt);
 		execute_sess_teardown(sess);
-	}
- 	else {
+	} else {
 		time_t dsec = CLOSE_TIME_INTERVAL; 
 		insert_event(evt, dsec, 0);
-	
 	}
-	return;
 }
 
 
@@ -1771,34 +1642,29 @@ void handle_sess_close_event(struct tp_event *evt){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //delete_sess_close_event
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void delete_sess_close_event(struct tp_event *evt){
-
+void delete_sess_close_event(struct tp_event *evt) {
 	struct sess_close_event_data *cls = (struct sess_close_event_data*) evt->data;
 	free( cls );
 	free( evt );
-	return;
 
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void start_sess_teardown_timer(struct session *sess)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void start_sess_teardown_timer(struct session *sess){
-
+void start_sess_teardown_timer(struct session *sess) {
 	if(sess->teardown_flag) return;
 
 	sess->teardown_flag = 1;
 	gettimeofday(&sess->teardown_time, NULL);
 	sess->teardown_time.tv_sec += SESS_TEARDOWN_TIME_INTERVAL;
-	return;
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void stop_sess_teardown_timer(struct session *sess)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void stop_sess_teardown_timer(struct session *sess){
-
+void stop_sess_teardown_timer(struct session *sess) {
 	sess->teardown_flag = 0;
 	return;
 }
@@ -1806,9 +1672,8 @@ void stop_sess_teardown_timer(struct session *sess){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //int check_sess_teardown_timer(struct session *sess)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int check_sess_teardown_timer(struct session *sess){
-
-	if(sess->teardown_flag){
+int check_sess_teardown_timer(struct session *sess) {
+	if(sess->teardown_flag) {
 		struct timeval now;
 		gettimeofday(&now, NULL);
 		if(sess->teardown_time.tv_sec <= now.tv_sec) return 1;
@@ -1819,17 +1684,11 @@ int check_sess_teardown_timer(struct session *sess){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void execute_sess_teardown(struct session *sess)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void execute_sess_teardown(struct session *sess){
-
+void execute_sess_teardown(struct session *sess) {
 	if(sess == NULL) return;
 	sprintf(msg_buf, "execute_sess_teardown: sess_id=%d is terminated", sess->index);
 	add_msg(msg_buf);
 	delete_session_parm(sess->token_loc);
 	delete_session(&sess->ft, 1);
-	return;			
 }
-
-
-
-
 

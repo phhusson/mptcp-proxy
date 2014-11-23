@@ -31,7 +31,7 @@
 
 #include "common.h"
 
-void writehelp(){
+void writehelp() {
 	printf("Command syntax:\n");
 	printf(" -L                       list all sessions and subflows\n");
 	printf("      -sess [SESS_ID]       session id, default = all sessions\n");
@@ -56,16 +56,14 @@ void writehelp(){
 
 
 
-int main(argc, argv)
-int argc;
-char *argv[];	
+int main(int argc, char **argv)
 {
 	//deal with commandline arguments
 	char incmd[200];
 
 
 	//analyze commandline args
-	if( (argc<2) || (    strcmp(argv[1],"-help")==0 || strcmp(argv[1],"--help")==0  )   ){
+	if( (argc<2) || strcmp(argv[1],"-help")==0 || strcmp(argv[1],"--help")==0  ) {
 		printf("argc=%d\n", argc);
 		writehelp();
 		exit(0);
@@ -100,27 +98,27 @@ char *argv[];
 
 	//open fifo
 	int fd_up = open(FIFO_NAME_UP, O_RDONLY | O_NONBLOCK);
-	
-	 fd_set fds_test;
-	 fd_set fds_input;
-	 FD_ZERO(&fds_input);		 
-         FD_SET(fd_up, &fds_input);
-  	 fds_test = fds_input;
-	 struct timeval timeout;
-	 timeout.tv_sec = 1; 
-	 timeout.tv_usec = 0;
 
-	 char buf[LEN_FIFO_MSG+1];
-	 int fd,rv;
-	 int rtn = select(FD_SETSIZE, &fds_test, (fd_set *) NULL, (fd_set *) NULL, &timeout);
-	 if(rtn == -1) {
+	fd_set fds_test;
+	fd_set fds_input;
+	FD_ZERO(&fds_input);		 
+	FD_SET(fd_up, &fds_input);
+	fds_test = fds_input;
+	struct timeval timeout;
+	timeout.tv_sec = 1; 
+	timeout.tv_usec = 0;
+
+	char buf[LEN_FIFO_MSG+1];
+	int fd,rv;
+	int rtn = select(FD_SETSIZE, &fds_test, (fd_set *) NULL, (fd_set *) NULL, &timeout);
+	if(rtn == -1) {
 		printf("mpproxy: select returns=%d, exit program!\n",rtn);	
 		exit(1);
-	 }
+	}
 	
-	 for(fd = 0; fd < FD_SETSIZE; fd++){
+	for(fd = 0; fd < FD_SETSIZE; fd++){
 		if(FD_ISSET(fd, &fds_test)){
-	
+
 			if (fd == fd_up){
 				ret = read(fd_up, buf, LEN_FIFO_MSG);
 				buf[ret] = '\0';
@@ -133,30 +131,5 @@ char *argv[];
 				if(buf[0] != '\0') printf("%s\n", buf);
 			}
 		}//end if F
-	 }
- } 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	}
+} 

@@ -35,7 +35,7 @@ void create_packet(unsigned char *buf, uint16_t *plen,
 	unsigned char flags,//network format 
 	uint16_t win, //network format
 	unsigned char *buf_opt, 
-	uint16_t len_opt){
+	uint16_t len_opt) {
 
 	len_opt=pad_options_buffer(buf_opt, len_opt);	
 
@@ -68,19 +68,15 @@ void create_packet(unsigned char *buf, uint16_t *plen,
 	*((uint32_t*)(buf+12)) = htonl(pft->ip_loc);	
 	*((uint32_t*)(buf+16)) = htonl(pft->ip_rem);
 
-
 	//update of both checksums
 	compute_checksums(buf, iplen, *plen);
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //send_raw_packet 
 //ip_dst, prt_dst in network format
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst, uint16_t prt_dst){
-
+int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst, uint16_t prt_dst) {
 	//send packet on raw socket
 	struct sockaddr_in sin;	
 	sin.sin_family = AF_INET;
@@ -90,7 +86,6 @@ int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst
 	int ret = sendto(sd, buf, len,0,(struct sockaddr*) &sin, sizeof(sin));
 	
 	return ret;
-
 }
 
 
@@ -98,8 +93,7 @@ int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst
 //SFLMAN: send_reset_fourtuple()
 // Sends sest on a certain fourtuple
 //++++++++++++++++++++++++++++++++++++++++++++++++
- int send_reset_fourtuple(struct fourtuple *ft, uint32_t seq_nb){
-
+int send_reset_fourtuple(struct fourtuple *ft, uint32_t seq_nb) {
 	//create ACK packet
 	//char opt_buf[opt_len];
 	uint16_t pack_len;
@@ -117,10 +111,9 @@ int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst
 		mptcp_opt_buf, 
 		4);//opt len
 
-		//send packet
-		if(send_raw_packet(raw_sd, raw_buf,  pack_len, htonl(ft->ip_rem), htons(ft->prt_rem))<0){
-			return 0;
-		}
+	//send packet
+	if(send_raw_packet(raw_sd, raw_buf,  pack_len, htonl(ft->ip_rem), htons(ft->prt_rem))<0)
+		return 0;
 
 	return 1;
 }
@@ -130,14 +123,12 @@ int send_raw_packet(size_t sd, unsigned char *buf, uint16_t len, uint32_t ip_dst
 //PACKMAN: cache_packet_header: Buffers signaling packet header for retransmission purposes
 //++++++++++++++++++++++++++++++++++++++++++++++++
 inline void cache_packet_header(){
+	if(packd.tcplen + packd.ip4len > 120)
+		return;
 
-	if(packd.tcplen + packd.ip4len <= 120) {
-		memcpy(packd.sess->rex_buf, packd.new_buf, packd.tcplen + packd.ip4len);
-		packd.sess->rex_buf_len = packd.tcplen + packd.ip4len;
-		packd.sess->rex_ip4_len = packd.ip4len;
-
-	}
-	return;
+	memcpy(packd.sess->rex_buf, packd.new_buf, packd.tcplen + packd.ip4len);
+	packd.sess->rex_buf_len = packd.tcplen + packd.ip4len;
+	packd.sess->rex_ip4_len = packd.ip4len;
 }
 
 
@@ -145,9 +136,7 @@ inline void cache_packet_header(){
 //copy_cached_packet:
 //   Copies packet buffered in session to new_buf
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void retransmit_cached_packet_header(){
-
-
+inline void retransmit_cached_packet_header() {
 	//add ipv4 header, core tcp header
 	memmove(packd.new_buf, packd.sess->rex_buf, packd.sess->rex_buf_len);
 
@@ -168,9 +157,6 @@ inline void retransmit_cached_packet_header(){
 
 	//add new tcp header length into packet
 	packd.tcph->th_off = packd.tcplen>>2;
-
-  
-	return;
 }
 
 
@@ -178,8 +164,7 @@ inline void retransmit_cached_packet_header(){
 //int parse_compact_copy_TCP_options(unsigned char *tcp_opt, uint16_t len)
 //	bundle a bunch of functions
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void parse_compact_copy_TCP_options(unsigned char *tcp_opt, uint16_t len){
-
+void parse_compact_copy_TCP_options(unsigned char *tcp_opt, uint16_t len) {
 	//parse and compact options into topt
 	size_t nb_tcp_options = parse_compact_options(tcp_opt, len, topt);
 
@@ -196,15 +181,14 @@ void parse_compact_copy_TCP_options(unsigned char *tcp_opt, uint16_t len){
 //	topt is attached to the options in packet after compacting them
 //	If header to long, returns 0 without doing anything, otherwise 1
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int append_TCP_option(unsigned char *tcp_opt, uint16_t *plen, unsigned char *new_tcp_opt, uint16_t new_len){
+int append_TCP_option(unsigned char *tcp_opt, uint16_t *plen, unsigned char *new_tcp_opt, uint16_t new_len) {
+	if(*plen + new_len > 40) return 0;
 
-		if(*plen + new_len > 40) return 0;
+	//append new option to tcp_opt_buf
+	memmove(tcp_opt + *plen, new_tcp_opt, new_len);
+	*plen += new_len;
 
-		//append new option to tcp_opt_buf
-		memmove(tcp_opt + *plen, new_tcp_opt, new_len);
-		*plen += new_len;
-
-		return 1;
+	return 1;
 }
 
 
@@ -214,11 +198,9 @@ int append_TCP_option(unsigned char *tcp_opt, uint16_t *plen, unsigned char *new
 //	For SYN and SYN/ACK, only key_loc is provided. 
 //	For final ACK both keys are provided
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int create_MPcap(unsigned char *mpbuf, uint32_t *key_loc, uint32_t *key_rem){
-
+int create_MPcap(unsigned char *mpbuf, uint32_t *key_loc, uint32_t *key_rem) {
 	unsigned char tpcap_len = (key_rem == NULL)? 12:20;
 	if(packd.mptcp_opt_len + tpcap_len > 40) return 0;
-
 
 	packd.mptcp_opt_len += tpcap_len;
 	*(mpbuf) = MPTCP_KIND;
@@ -241,7 +223,6 @@ int create_MPcap(unsigned char *mpbuf, uint32_t *key_loc, uint32_t *key_rem){
 //      used when terminating subflows
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void create_dummy_dssopt(unsigned char *mpbuf){
-
 	*(mpbuf) = MPTCP_KIND;
 	*(mpbuf+1) = 4;
 	*(mpbuf+2) = ( ((unsigned char) MPTCP_DSS)<<4) & 0xf0;
@@ -258,7 +239,8 @@ void create_dummy_dssopt(unsigned char *mpbuf){
 //	If header to long, returns -1 without doing anything, otherwise 0
 //	We currently disregard from security material
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int create_MPjoin_syn(unsigned char *top, uint16_t *len, uint32_t token, uint32_t rand_nmb, unsigned char addr_id, unsigned char backup){
+int create_MPjoin_syn(unsigned char *top, uint16_t *len, uint32_t token,
+		uint32_t rand_nmb, unsigned char addr_id, unsigned char backup) {
 
 	if((*len) + 12 > 40) return 0;
 
@@ -282,7 +264,8 @@ int create_MPjoin_syn(unsigned char *top, uint16_t *len, uint32_t token, uint32_
 //	If header to long, returns -1 without doing anything, otherwise 0
 //	We currently disregard from security material
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int create_MPjoin_synack(unsigned char *top, uint16_t *len, uint32_t *mac, uint32_t rand_nmb, unsigned char addr_id, unsigned char backup){
+int create_MPjoin_synack(unsigned char *top, uint16_t *len, uint32_t *mac,
+		uint32_t rand_nmb, unsigned char addr_id, unsigned char backup) {
 
 	if((*len) + 16 > 40) return 0;
 
@@ -306,7 +289,7 @@ int create_MPjoin_synack(unsigned char *top, uint16_t *len, uint32_t *mac, uint3
 //	If header to long, returns -1 without doing anything, otherwise 0
 //	We currently disregard from security material
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int create_MPjoin_ack(unsigned char *top, uint16_t *len, uint32_t *mac){
+int create_MPjoin_ack(unsigned char *top, uint16_t *len, uint32_t *mac) {
 
 	if((*len) + 24 > 40) return 0;
 
@@ -315,7 +298,6 @@ int create_MPjoin_ack(unsigned char *top, uint16_t *len, uint32_t *mac){
 	*(start+1) = 24;
 	*(start+2) = ( ((unsigned char) MPTCP_JOIN)<<4) ;
 	*(start+3) = 0;
-	int i;
 
 	memcpy(start+4, (unsigned char*) mac, 20);
 	(*len) += 24;
@@ -327,7 +309,7 @@ int create_MPjoin_ack(unsigned char *top, uint16_t *len, uint32_t *mac){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //create DSS option with DAN only: used only for side ACKs
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_dan_MPdss(unsigned char *mpbuf, uint16_t *mplen){
+void create_dan_MPdss(unsigned char *mpbuf, uint16_t *mplen) {
 
 	*(mpbuf) = MPTCP_KIND;
 	*(mpbuf+1) = 8;
@@ -341,18 +323,13 @@ void create_dan_MPdss(unsigned char *mpbuf, uint16_t *mplen){
 	return;
 }
 
-
-
-
-
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //create DSS option: uses dssopt_out as input
 //	mpbuf points to the beginning of the buffer for the TCP option
 //	len provides the present length of options already contained
 //	We currently disregard checksum
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_complete_MPdss(unsigned char *mpbuf){
-
+void create_complete_MPdss(unsigned char *mpbuf) {
 	unsigned char tpdss_len = (dssopt_out.Aflag)? 8:4;//4 bytes min, 8bytes if dan present
 	tpdss_len += (dssopt_out.Mflag)? 10:0;//add 8bytes more for dsn and ssn
 
@@ -369,58 +346,47 @@ void create_complete_MPdss(unsigned char *mpbuf){
 	*(mpbuf+3) += dssopt_out.Aflag & 0x01;
 
 	unsigned char it=0;
-	if(dssopt_out.Aflag){
+	if(dssopt_out.Aflag) {
 		*((uint32_t*) (mpbuf+4)) = htonl(dssopt_out.dan);
 		it+=4;
 	}
-	if(dssopt_out.Mflag){
+	if(dssopt_out.Mflag) {
 		*((uint32_t*) (mpbuf+4+it)) = htonl(dssopt_out.dsn);
 		*((uint32_t*) (mpbuf+8+it)) = htonl(dssopt_out.ssn);
 		*((uint16_t*) (mpbuf+12+it)) = htons(dssopt_out.range);
 	}
-
-	return;
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //create TPprio option: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_MPprio4(unsigned char *mpbuf, unsigned char addr_id_loc, unsigned char backup){
-
+void create_MPprio4(unsigned char *mpbuf, unsigned char addr_id_loc, unsigned char backup) {
 	*(mpbuf) = MPTCP_KIND;
 	*(mpbuf+1) = 4;
 	*(mpbuf+2) = ( ((unsigned char) MPTCP_PRIO)<<4) + backup;
 	*(mpbuf+3) = addr_id_loc;
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //create TPprio option: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_MPprio3(unsigned char *mpbuf, unsigned char backup){
-
+void create_MPprio3(unsigned char *mpbuf, unsigned char backup) {
 	*(mpbuf) = MPTCP_KIND;
 	*(mpbuf+1) = 3;
 	*(mpbuf+2) = ( ((unsigned char) MPTCP_PRIO)<<4) + backup;
-	return;
 }
-
 
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //create TPremove_addr_option: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_MPremove_addr(unsigned char *mpbuf, unsigned char addr_id_loc){
-
-
+void create_MPremove_addr(unsigned char *mpbuf, unsigned char addr_id_loc) {
 	*(mpbuf) = MPTCP_KIND;
 	*(mpbuf+1) = 4;
 	*(mpbuf+2) = ( ((unsigned char) MPTCP_REMOVE_ADDR)<<4);
 	*(mpbuf+3) = addr_id_loc;
-	return;
 }
 
 
@@ -428,8 +394,7 @@ void create_MPremove_addr(unsigned char *mpbuf, unsigned char addr_id_loc){
 //create TP_RESET option
 //	mpbuf points to packd.tptop_opt_buf.
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int create_MPreset(unsigned char *mpbuf, uint32_t *key_rem){
-
+int create_MPreset(unsigned char *mpbuf, uint32_t *key_rem) {
 	unsigned char tpcap_len = 12;
 	if(packd.mptcp_opt_len + tpcap_len > 40) return 0;
 
@@ -454,7 +419,6 @@ int create_MPreset(unsigned char *mpbuf, uint32_t *key_rem){
 // 	Checksums are fixed in filter05 based on verdict!
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void create_new_packet(unsigned char *const tcp_opt_buf, uint16_t len){
-
 	//add ipv4 header, core tcp header
 	memmove(packd.new_buf, packd.buf, packd.ip4len + 20);
 
@@ -477,8 +441,6 @@ void create_new_packet(unsigned char *const tcp_opt_buf, uint16_t len){
 
 	//fix_checksums(packd.new_buf, packd.ip4len, packd.totlen);
 	packd.tcp_opt_len = len;
-
-	return;
 }
 
 
@@ -487,19 +449,16 @@ void create_new_packet(unsigned char *const tcp_opt_buf, uint16_t len){
 //find  TP option: evaluates TP option array for some subkind
 //++++++++++++++++++++++++++++++++++++++++++++++++
 inline int find_MPsubkind(struct mptcp_option * const mptopt, size_t nb_options, const unsigned char subkind){
-	
 	int i=0;
-	if(nb_options == 0) {
-
+	if(nb_options == 0)
 		return -1;	
-	}
-	while(i<nb_options && (((mptopt[i].byte3)>>4) & 0x0f) != subkind ) {
 
+	while(i<nb_options && (((mptopt[i].byte3)>>4) & 0x0f) != subkind ) {
 		i++;
 	}
 
 	return (i==nb_options)? -1:i;
-};
+}
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -508,17 +467,13 @@ inline int find_MPsubkind(struct mptcp_option * const mptopt, size_t nb_options,
 //  Extracts IDSNloc and IDSNrem
 // returns 0 if header not found or too short
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int analyze_MPcap(struct mptcp_option * const mptopt, size_t const nb_topt, uint32_t *key_loc, uint32_t *key_rem){
-
+int analyze_MPcap(struct mptcp_option * const mptopt, size_t const nb_topt, uint32_t *key_loc, uint32_t *key_rem) {
 	int it = find_MPsubkind(mptopt, nb_topt, MPTCP_CAP);
-
-	if(it < 0) {
+	if(it < 0)
 		return 0;
-	}
-	if(mptopt[it].len != 12 && mptopt[it].len != 20 ) {
 
+	if(mptopt[it].len != 12 && mptopt[it].len != 20 )
 		return 0;
-	}
 
 
 	key_rem[0] = *(uint32_t *) (mptopt[it].data);
@@ -539,17 +494,16 @@ int analyze_MPcap(struct mptcp_option * const mptopt, size_t const nb_topt, uint
 //analyzes TPTCP join_syn option
 //++++++++++++++++++++++++++++++++++++++++++++++++
 int analyze_MPjoin_syn(struct mptcp_option * const mptopt, size_t const nb_topt, 
-	uint32_t *token, uint32_t *rand_nmb, unsigned char *address_id, unsigned char *backup){
+	uint32_t *token, uint32_t *rand_nmb, unsigned char *address_id, unsigned char *backup) {
 
 	int it = find_MPsubkind(mptopt, nb_topt, MPTCP_JOIN);
 
-	if(it < 0) {
+	if(it < 0)
 		return 0;
-	}
-	if(mptopt[it].len != 12) {
-	
+
+	if(mptopt[it].len != 12)
 		return 0;
-	}
+
 	//get token and find session
 	*address_id = (mptopt[it].byte4);
 	*backup = (mptopt[it].byte4 & 0x01);
@@ -563,16 +517,15 @@ int analyze_MPjoin_syn(struct mptcp_option * const mptopt, size_t const nb_topt,
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //analyzes TPTCP join  synack option
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int analyze_MPjoin_synack(struct mptcp_option * const mptopt, size_t const nb_topt, \
-		uint32_t *mac, uint32_t *rand_nmb, unsigned char *address_id, unsigned char *backup){
+int analyze_MPjoin_synack(struct mptcp_option * const mptopt, size_t const nb_topt,
+		uint32_t *mac, uint32_t *rand_nmb, unsigned char *address_id, unsigned char *backup) {
 
 	int it = find_MPsubkind(mptopt, nb_topt, MPTCP_JOIN);
-	if(it < 0) {
+	if(it < 0)
 		return 0;
-	}
-	if(mptopt[it].len != 16) {
+
+	if(mptopt[it].len != 16)
 		return 0;
-	}
 
 	//get token and find session
 	*backup = (mptopt[it].byte4 & 0x01);
@@ -587,20 +540,19 @@ int analyze_MPjoin_synack(struct mptcp_option * const mptopt, size_t const nb_to
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //analyzes TPTCP join ack option
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int analyze_MPjoin_ack(struct mptcp_option * const mptopt, size_t const nb_topt, uint32_t *mac){
+int analyze_MPjoin_ack(struct mptcp_option * const mptopt, size_t const nb_topt, uint32_t *mac) {
 
 	int it = find_MPsubkind(mptopt, nb_topt, MPTCP_JOIN);
 
-	if(it < 0) {
+	if(it < 0)
 		return 0;
-	}
-	if(mptopt[it].len != 24) {
+
+	if(mptopt[it].len != 24)
 		return 0;
-	}
 
 	//get token and find session
 	int i;
-	for(i=0;i<5;i++){
+	for(i=0;i<5;i++) {
 		*(mac + i) = *( (uint32_t *) (mptopt[it].data + 4*i));
 	}
 	return 1;
@@ -613,11 +565,10 @@ int analyze_MPjoin_ack(struct mptcp_option * const mptopt, size_t const nb_topt,
 //analyze TPTCP dss option (we already know that this is a dss option)
 //  writes on dssopt
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int analyze_MPdss(struct mptcp_option *const tptop, size_t const nb_topt){
+int analyze_MPdss(struct mptcp_option *const tptop, size_t const nb_topt) {
 
 	int i1 = find_MPsubkind(mptopt, nb_topt, MPTCP_DSS);
 	if(i1 < 0) {
-
 		dssopt_in.present = 0;
 		return 0;
 	}
@@ -651,19 +602,18 @@ int analyze_MPdss(struct mptcp_option *const tptop, size_t const nb_topt){
 //analyze TPprio option: 
 //	Returns 0 if subkind not found, 1 if 3-bytes (no addr_id_rem), 2 if 4-bytes (incl addr_id_rem)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int analyze_MPprio(struct mptcp_option *const tptop, size_t const nb_topt, unsigned char *addr_id_rem, unsigned char *backup){
+int analyze_MPprio(struct mptcp_option *const tptop, size_t const nb_topt,
+		unsigned char *addr_id_rem, unsigned char *backup) {
 
 	int i1 = find_MPsubkind(mptopt, nb_topt, MPTCP_PRIO);
-	if(i1 < 0) {
+	if(i1 < 0)
 		return 0;
-	}
 
 	*backup = tptop[i1].byte3 & 0x0f;
 	*addr_id_rem = 0;
 	if(tptop[i1].len == 3) {
 		return 1;
-	}
-	else {
+	} else {
 		*addr_id_rem = tptop[i1].byte4;
 		return 2;
 	}
@@ -674,13 +624,10 @@ int analyze_MPprio(struct mptcp_option *const tptop, size_t const nb_topt, unsig
 //analyze TPprio option: 
 //	If header to long, returns -1 without doing anything, otherwise 0
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int analyze_MPremove_addr(struct mptcp_option *const tptop, size_t const nb_topt, unsigned char *addr_id_rem){
-
+int analyze_MPremove_addr(struct mptcp_option *const tptop, size_t const nb_topt, unsigned char *addr_id_rem) {
 	int i1 = find_MPsubkind(mptopt, nb_topt, MPTCP_REMOVE_ADDR);
-	if(i1 < 0) {
-
+	if(i1 < 0)
 		return 0;
-	}
 
 	*addr_id_rem = tptop[i1].byte4;
 	return 1;
@@ -693,16 +640,14 @@ int analyze_MPremove_addr(struct mptcp_option *const tptop, size_t const nb_topt
 //  Extracts IDSNloc and IDSNrem
 // returns 0 if header not found or too short
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int analyze_MPreset(struct mptcp_option * const mptopt, size_t const nb_topt, uint32_t *key_loc){
+int analyze_MPreset(struct mptcp_option * const mptopt, size_t const nb_topt, uint32_t *key_loc) {
 
 	int it = find_MPsubkind(mptopt, nb_topt, MPTCP_RST);
-	if(it < 0) {
+	if(it < 0)
 		return 0;
-	}
-	if(mptopt[it].len != 12) {
-		return 0;
-	}
 
+	if(mptopt[it].len != 12)
+		return 0;
 
 	key_loc[0] = *(uint32_t *) (mptopt[it].data);
 	key_loc[1] = *(uint32_t *) (mptopt[it].data + 4);
@@ -717,7 +662,7 @@ int analyze_MPreset(struct mptcp_option * const mptopt, size_t const nb_topt, ui
 // Packet only serves to satisfy subflow SSN/SAN consistency.
 // It does carries a DAN (4B) and the tcp options contained on the thruway input packet
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int prepare_top_side_ack(){
+int prepare_top_side_ack() {
 
 	//create tcp_opt_buf_ack for side acks
 	//copy tcp_opt_buf to tcp_opt_buf_ack
@@ -744,25 +689,25 @@ int prepare_top_side_ack(){
 //	returns 0 if options don't fit into TCP options header
 //	returns 1 if options fit into TCP options header
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int output_data_mptcp(){
+int output_data_mptcp() {
 
-		//parse & compact TCP options on packet, copy to packd.tcp_opt_buf
-		if(packd.tcp_options_compacted == 0) parse_compact_copy_TCP_options(packd.buf+packd.pos_thead+20, packd.tcplen-20);
+	//parse & compact TCP options on packet, copy to packd.tcp_opt_buf
+	if(packd.tcp_options_compacted == 0)
+		parse_compact_copy_TCP_options(packd.buf+packd.pos_thead+20, packd.tcplen-20);
 
-		//append mptcp_opt_buf to packd.tcp_opt_buf; packd.tcp_opt_len is extended
-		if( !append_TCP_option(packd.tcp_opt_buf, &packd.tcp_opt_len, packd.mptcp_opt_buf, packd.mptcp_opt_len) ){
-
-			//pad appended options
-			packd.tcp_opt_len = pad_options_buffer(packd.tcp_opt_buf, packd.tcp_opt_len);
-			return 0;
-		}
-
+	//append mptcp_opt_buf to packd.tcp_opt_buf; packd.tcp_opt_len is extended
+	if( !append_TCP_option(packd.tcp_opt_buf, &packd.tcp_opt_len, packd.mptcp_opt_buf, packd.mptcp_opt_len) ) {
 		//pad appended options
 		packd.tcp_opt_len = pad_options_buffer(packd.tcp_opt_buf, packd.tcp_opt_len);
+		return 0;
+	}
 
-		//create new packet from old packet and appended options
-		create_new_packet(packd.tcp_opt_buf, packd.tcp_opt_len);
-		return 1;
+	//pad appended options
+	packd.tcp_opt_len = pad_options_buffer(packd.tcp_opt_buf, packd.tcp_opt_len);
+
+	//create new packet from old packet and appended options
+	create_new_packet(packd.tcp_opt_buf, packd.tcp_opt_len);
+	return 1;
 }
 
 
@@ -775,15 +720,12 @@ size_t parse_mptcp_options(unsigned char *opt_buf, uint16_t opt_len, struct mptc
 
 	size_t curs = 0;
 	size_t count_tp = 0;
-	while(curs < opt_len){
-
+	while(curs < opt_len) {
 		if ( *(opt_buf+curs) <= 1) curs++;//those are the one-byte option with kind =0 or kind =1
 		else{				
-
-			if( *(opt_buf+curs+1) == 0 ){
-
+			if( *(opt_buf+curs+1) == 0 )
 				break;
-			}
+
 			if( *(opt_buf+curs) == MPTCP_KIND) {
 				tptop[count_tp].kind= *(opt_buf+curs);
 				tptop[count_tp].len= *(opt_buf+curs+1);
@@ -805,14 +747,12 @@ size_t parse_mptcp_options(unsigned char *opt_buf, uint16_t opt_len, struct mptc
 //	buf points at beginning of TCP options, 
 //	buf and plen are being overwritten
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int eliminate_sack(unsigned char *buf, unsigned char *len){
-
+int eliminate_sack(unsigned char *buf, unsigned char *len) {
 	unsigned char offset = 0;
 	int found = 0;
 	
-	while(offset < *len-1 && !found){
-		
-		if( *(buf+offset) == 4){
+	while(offset < *len-1 && !found) {
+		if( *(buf+offset) == 4) {
 			memmove(buf+offset, buf+offset+2, *len-offset-2);
 			*len -= 2;
 			found = 1;
@@ -827,11 +767,9 @@ int eliminate_sack(unsigned char *buf, unsigned char *len){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //append_sack(): appends sack option (kind = 4, length =2) to SYN packets
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int append_sack(unsigned char *buf, unsigned char *len){
-
-	if(*len > 38) {
+int append_sack(unsigned char *buf, unsigned char *len) {
+	if(*len > 38)
 		return 0;
-	}
 
 	*(buf + *len) = 4;
 	*(buf + *len + 1) = 2;
@@ -849,8 +787,7 @@ int append_sack(unsigned char *buf, unsigned char *len){
 //	buf points at beginning of TCP options, 
 //	nb_sack provides the number of SACK entries found
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void extract_sack_blocks(unsigned char * const buf, const uint16_t len, unsigned char *nb_sack, uint32_t *sack, uint32_t sack_offset){
-
+void extract_sack_blocks(unsigned char * const buf, const uint16_t len, unsigned char *nb_sack, uint32_t *sack, uint32_t sack_offset) {
 	//find sack offset
 	int offset = find_offset_of_tcp_option(buf, len, 5);
 	if(offset == -1){
@@ -866,8 +803,7 @@ void extract_sack_blocks(unsigned char * const buf, const uint16_t len, unsigned
 	int i,j,k;
 	offset += 2;
 	uint32_t lowval;
-	for(i=0;i<*nb_sack;i++){
-
+	for(i=0;i<*nb_sack;i++) {
 		//find position in sack array
 		j=0;
 		lowval = ntohl( *((uint32_t*) (buf + offset)));
@@ -876,7 +812,7 @@ void extract_sack_blocks(unsigned char * const buf, const uint16_t len, unsigned
 		while(j < i && lowval > *(sack + ((j+1)<<1))) j++;
 
 		//move all higher elements one up
-		for(k=i-1; k>=j; k--){
+		for(k=i-1; k>=j; k--) {
 			*(sack + ((k+2)<<1)) = *(sack + ((k+1)<<1));
 			*(sack + ((k+2)<<1) + 1) = *(sack + ((k+1)<<1) + 1);
 		}
@@ -898,18 +834,16 @@ void extract_sack_blocks(unsigned char * const buf, const uint16_t len, unsigned
 //	len is the present TCP opiton length and is updated when new SACK is inserted
 //	buf points to beginning of TCP options,
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void update_sack_blocks(unsigned char nb_sack, uint32_t * const sack, unsigned char *buf, uint16_t *len, unsigned char max_len, uint32_t sack_offset){
+void update_sack_blocks(unsigned char nb_sack, uint32_t * const sack,
+		unsigned char *buf, uint16_t *len, unsigned char max_len, uint32_t sack_offset) {
 
 	//find sack offset
 	int offset = find_offset_of_tcp_option(buf, *len, 5);
 
 	unsigned char nb_curr;
 	uint16_t room = max_len - (*len);
-	if(max_len < *len) {
-
+	if(max_len < *len)
 		room = 0;
-	}
-
 
 	if(offset == -1) {
 
@@ -921,25 +855,20 @@ void update_sack_blocks(unsigned char nb_sack, uint32_t * const sack, unsigned c
 		*(buf+offset) = 5;//set kind
 		*(buf+offset+1) = 2 + (nb_sack<<3);//set len
 		*len += *(buf+offset+1);//increment total len
-	}
-	else {
+	} else {
 		nb_curr = (( *(buf + offset + 1) )-2)>>3; // nb of existing SACK entries = (len-2)/8
 
 		unsigned char nb_curr_corr = nb_curr;//room correction to accomodate overhanding bytes
-		if(*len > max_len){
-
-
-
+		if(*len > max_len) {
 			unsigned char nb_sack_red = ((*len - max_len + 7)>>3);
 			if(nb_sack_red > nb_curr_corr) nb_curr_corr = 0;
 			else nb_curr_corr -= nb_sack_red;
 		}
-		if(nb_sack > nb_curr_corr) {
 
+		if(nb_sack > nb_curr_corr)
 			nb_sack = nb_curr_corr + (room>>3);// nb_sack = min(nb_sack, nb_curr+room/8)
 
-		}
-		if(nb_sack == 0){
+		if(nb_sack == 0) {
 			memmove(buf + offset, buf + offset+2 + (nb_curr<<3), *len - offset-2 - (nb_curr<<3));
 			*len -= (nb_curr<<3) + 2;
 			return;
@@ -951,15 +880,12 @@ void update_sack_blocks(unsigned char nb_sack, uint32_t * const sack, unsigned c
 	}
 	unsigned char i;
 	offset += 2;
-	for(i=0;i<nb_sack;i++){
+	for(i=0;i<nb_sack;i++) {
 		*((uint32_t*) (buf+offset)) = htonl(*(sack + (i<<1))  + sack_offset);
 		*((uint32_t*) (buf+offset + 4)) = htonl(*(sack + (i<<1) +1) + sack_offset + 1);//add one since we define upper sack edge differently
-		offset += 8;	
+		offset += 8;
 	}
-
-	return;
 }
-
 
 
 
@@ -969,14 +895,13 @@ void update_sack_blocks(unsigned char nb_sack, uint32_t * const sack, unsigned c
 //	buf and len are updated accordingly
 //	return 0 if option was not present and 1 otherwise
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int eliminate_tcp_option(unsigned char *buf, unsigned char *len, unsigned char kind){
-
+int eliminate_tcp_option(unsigned char *buf, unsigned char *len, unsigned char kind) {
 	unsigned char offset = 0;
 	int found = 0;
 	
-	while(offset < *len-1 && !found){
+	while(offset < *len-1 && !found) {
 		
-		if( *(buf+offset) == kind){
+		if( *(buf+offset) == kind) {
 			*len -= *(buf+offset+1);//subtract SACK length
 			memmove(buf+offset, buf+offset+ *(buf+offset+1), *len-offset);
 			found = 1;
@@ -992,14 +917,13 @@ int eliminate_tcp_option(unsigned char *buf, unsigned char *len, unsigned char k
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //find_tcp_option(): searches for tcp option with certain kind; len is length of option
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int find_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind){
+int find_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind) {
 
 	unsigned char offset = 0;
 	int found = 0;
 	
-	while(offset < len-1 && !found){
-		
-		if( *(buf+offset) == kind){
+	while(offset < len-1 && !found) {
+		if( *(buf+offset) == kind) {
 			found = 1;
 			break;
 		}
@@ -1012,14 +936,13 @@ int find_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //find_offset_of_tcp_option(): searches for tcp option with certain kind and returns offset to beginning of option
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int find_offset_of_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind){
+inline int find_offset_of_tcp_option(unsigned char *buf, unsigned char  len, unsigned char kind) {
 
 	unsigned char offset = 0;
 	int found = -1;
 	
-	while(offset < len-1 && found == -1){
-		
-		if( *(buf+offset) == kind){
+	while(offset < len-1 && found == -1) {
+		if( *(buf+offset) == kind) {
 			found = offset;
 			break;
 		}
@@ -1033,13 +956,11 @@ inline int find_offset_of_tcp_option(unsigned char *buf, unsigned char  len, uns
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //add_tcp_option(): adds tcp option in front of buffer
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void add_tcp_option(unsigned char *buf, uint16_t len, unsigned char opt_kind, unsigned char opt_len, unsigned char *opt_data){
-
+void add_tcp_option(unsigned char *buf, uint16_t len, unsigned char opt_kind, unsigned char opt_len, unsigned char *opt_data) {
 	memmove(buf + opt_len, buf, len);//shift everything to the back
 	*buf = opt_kind;
 	*(buf+1) = opt_len;
 	memcpy(buf+2, opt_data, opt_len-2);
-	return;	
 }
 
 
@@ -1048,8 +969,7 @@ void add_tcp_option(unsigned char *buf, uint16_t len, unsigned char opt_kind, un
 //get_timestamp(): searches for timestamp option (kind = 8, length =10)
 //	and returns TSVAL or TSECR based on flag (0,1)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-uint32_t get_timestamp(unsigned char *buf, unsigned char len, unsigned char flag){
-
+uint32_t get_timestamp(unsigned char *buf, unsigned char len, unsigned char flag) {
 	int pos = find_offset_of_tcp_option(buf, len, 8);
 	
 	return ntohl( *(uint32_t*)(buf + pos + 2 + (flag<<2) ));
@@ -1061,16 +981,13 @@ uint32_t get_timestamp(unsigned char *buf, unsigned char len, unsigned char flag
 //set_timestamps(): searches for timestamp option (kind = 8, length =10)
 //	and overwrites timestamps. 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void set_timestamps(unsigned char *buf, unsigned char len, uint32_t tsval, uint32_t tsecr, int tsecr_flag){
-
+void set_timestamps(unsigned char *buf, unsigned char len,
+		uint32_t tsval, uint32_t tsecr, int tsecr_flag) {
 
 	int pos = find_offset_of_tcp_option(buf, len, 8);
 	
 	* ( (uint32_t*)(buf+pos+2) ) = htonl(tsval);
 	if(tsecr_flag) *( (uint32_t*)(buf+pos+6) ) = htonl(tsecr);
-
-	return;
-
 }
 
 
@@ -1078,14 +995,11 @@ void set_timestamps(unsigned char *buf, unsigned char len, uint32_t tsval, uint3
 //add_timestamps(): adds timestamps at *buf, updates len
 //	and overwrites timestamps. 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void add_timestamps(unsigned char *buf, uint32_t tsval, uint32_t tsecr){
-
+void add_timestamps(unsigned char *buf, uint32_t tsval, uint32_t tsecr) {
 	buf[0] = 8;
 	buf[1] = 10;
 	*((uint32_t*) (buf+2)) = htonl(tsval);
 	*((uint32_t*) (buf+6)) = htonl(tsecr);
-	return;
-
 }
 
 
@@ -1095,8 +1009,7 @@ void add_timestamps(unsigned char *buf, uint32_t tsval, uint32_t tsecr){
 //manipulate_mss(): searches for MSS option (kind = 2, length =4)
 //	end overwrite max MSS size with 1420
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void manipulate_mss(unsigned char *buf, unsigned char *len){
-
+void manipulate_mss(unsigned char *buf, unsigned char *len) {
 	unsigned char offset = 0;
 	
 	//find tcp option with kind=2
@@ -1107,9 +1020,7 @@ void manipulate_mss(unsigned char *buf, unsigned char *len){
 	}
 
 	//deactivate this feature
-
 	if( *(buf+offset) == 2)	*((uint16_t*) (buf + offset + 2)) = htons(MAX_MSS);
-	
 }
 
 
@@ -1119,8 +1030,7 @@ void manipulate_mss(unsigned char *buf, unsigned char *len){
 //	if not found returns 0
 //	factor is exponent of 2
 //++++++++++++++++++++++++++++++++++++++++++++++++
-unsigned char find_window_scaling(unsigned char *buf, unsigned char *len){
-
+unsigned char find_window_scaling(unsigned char *buf, unsigned char *len) {
 	unsigned char offset = 0;
 	unsigned char factor = 0;
 	while(offset < *len-2){
@@ -1145,17 +1055,16 @@ unsigned char find_window_scaling(unsigned char *buf, unsigned char *len){
 //  Provides all TCP options in the TOP Optin header
 //  Opt_buf pints at the beginning of the TCP options header
 //++++++++++++++++++++++++++++++++++++++++++++++++
-size_t parse_options(unsigned char *opt_buf, uint16_t opt_len, struct tcp_option top[]){
+size_t parse_options(unsigned char *opt_buf, uint16_t opt_len, struct tcp_option top[]) {
 
 	uint16_t offset = 0;
 	size_t count = 0;
-	while(offset < opt_len){
+	while(offset < opt_len) {
 		top[count].kind= *(opt_buf+offset);
 		if (top[count].kind <= 1){
 			top[count].len=1;
 			top[count].data[0]=0;
-		}
-		else{				
+		} else {				
 			top[count].len= *(opt_buf+offset+1);
 			memmove(top[count].data, (opt_buf+offset+2), top[count].len-2);
 		}
@@ -1174,14 +1083,15 @@ size_t parse_options(unsigned char *opt_buf, uint16_t opt_len, struct tcp_option
 //  All PADs and NO-OPERATIONs are filtered out.
 //  This subrouting is used to gain space when more options are to be added
 //++++++++++++++++++++++++++++++++++++++++++++++++
-size_t parse_compact_options(unsigned char *opt_buf, uint16_t opt_len, struct tcp_option top[]){
+size_t parse_compact_options(unsigned char *opt_buf, uint16_t opt_len, struct tcp_option top[]) {
 
 	size_t offset = 0;
 	size_t count = 0;
 	size_t i;
-	while(offset < opt_len){
-		if (*(opt_buf+offset) <= 1) offset++;
-		else{				
+	while(offset < opt_len) {
+		if (*(opt_buf+offset) <= 1) {
+			offset++;
+		} else {				
 			top[count].kind= *(opt_buf+offset);
 			top[count].len= *(opt_buf+offset+1);
 			memmove(top[count].data, opt_buf+offset+2, top[count].len);
@@ -1200,8 +1110,7 @@ size_t parse_compact_options(unsigned char *opt_buf, uint16_t opt_len, struct tc
 //  however this is not mandatory requirement here
 //  returns the length of the new TCP option header
 //++++++++++++++++++++++++++++++++++++++++++++++++
-uint16_t copy_options_to_buffer(unsigned char *buf, size_t nb_opt, struct tcp_option top[]){
-
+uint16_t copy_options_to_buffer(unsigned char *buf, size_t nb_opt, struct tcp_option top[]) {
 	//copy options to buffer
 	uint16_t i1,i2;
 	uint16_t curs=0;
@@ -1217,21 +1126,17 @@ uint16_t copy_options_to_buffer(unsigned char *buf, size_t nb_opt, struct tcp_op
 //  Pad with ones until length is multiple of 4
 //  returns the length of the new TCP option header
 //++++++++++++++++++++++++++++++++++++++++++++++++
-uint16_t pad_options_buffer(unsigned char *buf, uint16_t len){
-
+uint16_t pad_options_buffer(unsigned char *buf, uint16_t len) {
 	memset(buf+len,1,(((len+3)>>2)<<2)-len);
 	return (((len+3)>>2)<<2);
 }
 
 
 
-
-
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //New IPv4 header checksum calculation
 //++++++++++++++++++++++++++++++++++++++++++++++++
-uint16_t i4_sum_calc(uint16_t nwords, uint16_t* buf){
-
+uint16_t i4_sum_calc(uint16_t nwords, uint16_t* buf) {
 	//buffer present checksum
 	uint16_t sum_buf = ( *(buf+5) );
 
@@ -1246,10 +1151,12 @@ uint16_t i4_sum_calc(uint16_t nwords, uint16_t* buf){
 
 	//sum it all up	
 	int i;
-	for (i=0; i<nwords; i++) sum += *(buf+i);
+	for (i=0; i<nwords; i++)
+		sum += *(buf+i);
 	
 	//keep only the last 16 bist of the 32 bit calculated sum and add the carries
-	while (sum>>16) sum = (sum & 0xFFFF) + (sum >> 16);
+	while(sum>>16)
+		sum = (sum & 0xFFFF) + (sum >> 16);
 
 	//take the one's copliement of sum
 	sum = ~sum;
@@ -1271,10 +1178,11 @@ uint16_t i4_sum_calc(uint16_t nwords, uint16_t* buf){
 //  Does not include payload in sum.
 //  
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void buffer_tcp_header_checksum(){
+void buffer_tcp_header_checksum() {
 
-	if(packd.paylen == 0) packd.old_tcp_header_checksum = (uint16_t) ~packd.tcph->th_sum;
-	else{
+	if(packd.paylen == 0) {
+		packd.old_tcp_header_checksum = (uint16_t) ~packd.tcph->th_sum;
+	} else {
 		
 		//create 16-bit word pointer
 		uint16_t *pt_buf16 = (uint16_t *) (packd.buf);	
@@ -1282,9 +1190,6 @@ void buffer_tcp_header_checksum(){
 		//compute checksum. Note: Totlen may have changed during manipulation. It is therefore updated.
 		packd.old_tcp_header_checksum = tcp_sum_calc(packd.tcplen, pt_buf16+6, pt_buf16+8, (pt_buf16 + (packd.pos_thead>>1)));
 	}
-
-
-	return;
 }
 
 
@@ -1292,12 +1197,11 @@ void buffer_tcp_header_checksum(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //New TCP header checksum calculation
 //++++++++++++++++++++++++++++++++++++++++++++++++
-uint16_t 
-tcp_sum_calc(
+uint16_t  tcp_sum_calc(
 	uint16_t len_tcp, 
 	uint16_t *src_addr, 
 	uint16_t *dst_addr, 
-	uint16_t *buf){
+	uint16_t *buf) {
 
 	//buffer checksum
 	uint16_t old_sum = buf[8];//checksum
@@ -1314,7 +1218,7 @@ tcp_sum_calc(
 
 	//Find out if the length of data is even or odd number. If odd,
 	//add a padding byte = 0 at the end of packet
-	if( (len_tcp & 1) == 1){
+	if( (len_tcp & 1) == 1) {
 		padd = 1;
 		buf[ (len_tcp-1)>>1 ] &= 0x00FF;
 	}
@@ -1325,7 +1229,8 @@ tcp_sum_calc(
 	//make 16 bit words out of every two adjacent 8 bit words and
 	//calculate the sum of all 16 bit words
 	int i;
-	for (i=0; i<((len_tcp+padd)>>1); i++) sum +=  (*(buf + i));
+	for (i=0; i<((len_tcp+padd)>>1); i++)
+		sum +=  (*(buf + i));
 
 
 	//add the TCP pseudo header which contains
@@ -1355,7 +1260,7 @@ tcp_sum_calc(
 // buf starts at i4 header. len_pk includes i4 header, tcp header, payload
 // leni4: length of Ipv4 header in octects, lenpk: length of entire packet in octets
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void fix_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk){
+void fix_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk) {
 
 	//create 16-bit word pointer
 	uint16_t *pt_buf16 = (uint16_t *) (buf);	
@@ -1369,7 +1274,6 @@ void fix_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk){
 	//enter fixed i4 checksum into packet
 	*(pt_buf16 + 5) = i4sum;
 
-
 	//delta method
 	uint16_t new_tcp_header_checksum = tcp_sum_calc(packd.tcplen, pt_buf16+6, pt_buf16+8, (uint16_t *) (buf + packd.pos_thead));
 
@@ -1379,13 +1283,12 @@ void fix_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk){
 	alt_sum_long -= ( alt_sum_long <= old_header)? 1:0;
 	alt_sum_long -=  old_header;
 
-	while (alt_sum_long>>16) alt_sum_long = (alt_sum_long & 0xFFFF) + (alt_sum_long >> 16);
+	while (alt_sum_long>>16)
+		alt_sum_long = (alt_sum_long & 0xFFFF) + (alt_sum_long >> 16);
 	uint16_t alt_sum = (uint16_t)(~alt_sum_long);
 
 
 	*(pt_buf16 + (leni4>>1) + 8) = alt_sum;
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1393,7 +1296,7 @@ void fix_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk){
 // buf starts at i4 header. len_pk includes i4 header, tcp header, payload
 // leni4: length of Ipv4 header in octects, lenpk: length of entire packet in octets
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void compute_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk){
+void compute_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk) {
 
 	//create 16-bit word pointer
 	uint16_t *pt_buf16 = (uint16_t *) (buf);	
@@ -1418,8 +1321,6 @@ void compute_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk){
 
 
 	*(pt_buf16 + (leni4>>1) + 8) = ~( (uint16_t)(new_tcp_header_checksum));
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1428,7 +1329,7 @@ void compute_checksums(unsigned char *buf, uint16_t leni4, uint16_t lenpk){
 // leni4: length of Ipv4 header in octects, lenpk: length of entire packet in octets
 //returns boolean 0 or 1
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int verify_checksums(unsigned char *buf){
+int verify_checksums(unsigned char *buf) {
 
 	//create 16-bit word pointer
 	uint16_t *pt_buf16 = (uint16_t *) (buf);	
@@ -1439,20 +1340,15 @@ int verify_checksums(unsigned char *buf){
 
 	//update i4 checksum
 	uint16_t sum = *(pt_buf16 + 5);
-	if (sum != i4_sum_calc( (leni4>>1), pt_buf16)){
-
+	if (sum != i4_sum_calc( (leni4>>1), pt_buf16))
 		return 0;
-	}
 
 
 	//delta method
 	sum = *(pt_buf16 + (leni4>>1) + 8);
 	uint16_t new_sum = ~tcp_sum_calc(lenpk-leni4, pt_buf16+6, pt_buf16+8, (uint16_t *) (buf + leni4));
-	if(sum != new_sum){
-
+	if(sum != new_sum)
 		return 0;
-	}
-
 
 	return 1;
 }

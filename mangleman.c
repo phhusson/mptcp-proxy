@@ -25,24 +25,24 @@
 //set verdict
 //  sets verdict, data_update_flag and size_update_flag
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void set_verdict(size_t verdict, size_t data_update, size_t size_update){
-		packd.verdict = verdict;
-		packd.data_update_flag = data_update;
-		packd.size_update_flag = size_update;
+void set_verdict(size_t verdict, size_t data_update, size_t size_update) {
+	packd.verdict = verdict;
+	packd.data_update_flag = data_update;
+	packd.size_update_flag = size_update;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //handle_reset_output(): Used when application sends reset
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void handle_reset_output(){
+void handle_reset_output() {
 
 	//sess may not be known if RST is self inserted
-	if(packd.sess == NULL){
+	if(packd.sess == NULL) {
 		set_verdict(1,0,0);
 		return;
 	}
 
-	if(packd.sess->sess_state == RST_WAIT){
+	if(packd.sess->sess_state == RST_WAIT) {
 		set_verdict(0,0,0);
 		return;
 
@@ -51,7 +51,7 @@ void handle_reset_output(){
 	//set subflows to TIME_WAIT and send reset on all except active subflow
 	int i;
 	struct subflow *sflx;
-	for(i = 0; i<packd.sess->pA_sflows.number; i++){
+	for(i = 0; i<packd.sess->pA_sflows.number; i++) {
 
 		sflx = (struct subflow*) get_pnt_pA(&packd.sess->pA_sflows, i);
 		sflx->tcp_state = TIME_WAIT;
@@ -63,8 +63,7 @@ void handle_reset_output(){
 	create_sess_break_event(&packd.ft);
 
 	//if act subflow is presently NULL, go to TIME WAIT and let session fade away
-	if(packd.sess->act_subflow == NULL){
-
+	if(packd.sess->act_subflow == NULL) {
 		packd.sess->sess_state = TIME_WAIT;
 		return;
 	}
@@ -91,27 +90,26 @@ void handle_reset_output(){
 	if(!packd.ack) packd.tcph->th_flags += 16;//we must set the ACK flag here!
 	packd.tcph->th_win = packd.sess->curr_window_loc<<packd.sess->scaling_factor_loc;
 
-	if(output_data_mptcp()){
+	if(output_data_mptcp()) {
 		set_verdict(1,1,1);
 		create_rex_event(&packd.sfl->ft, packd.sfl->tcp_state, packd.new_buf, packd.tcplen + packd.ip4len);
-	}
-	else set_verdict(1,0,0);
+	} else
+		set_verdict(1,0,0);
 
 	sprintf(msg_buf,"handle_reset_output: sess id=%d entering sess_state RST_WAIT", packd.sess->index);
 	add_msg(msg_buf);
-	return;
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //handle_data_reset_input(): Used when DSS option on input carries R
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void handle_data_reset_input(){
+void handle_data_reset_input() {
 
 	//analyze TPreset and check key
 	uint32_t key[2];
 	analyze_MPreset(mptopt, packd.nb_mptcp_options, key);
-	if(memcmp(key, packd.sess->key_loc, 8) != 0){
+	if(memcmp(key, packd.sess->key_loc, 8) != 0) {
 
 
 		char buf_key1[30];
@@ -151,22 +149,18 @@ void handle_data_reset_input(){
 	//delete session
 	delete_session_parm(packd.sess->token_loc);
 	delete_session(&packd.sess->ft, 1);
-
-	return;
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //handle_reset_input()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void handle_reset_input(){
-
+void handle_reset_input() {
 	if(packd.sess == NULL) {
 		set_verdict(1,0,0);	
 		return;
 	}
-	if(packd.sess->sess_state == RST_WAIT){
-
+	if(packd.sess->sess_state == RST_WAIT) {
 		sprintf(msg_buf, "handle_reset_input: RST received in RST_WAIT state. Deleting sfl_id=%u", packd.sfl->index);
 		add_msg(msg_buf);	
 
@@ -183,7 +177,6 @@ void handle_reset_input(){
 	}
 
 	if(packd.sfl->tcp_state == TIME_WAIT) {
-
 		sprintf(msg_buf, "handle_reset_input: RST received in TIME_WAIT state. Deleting sfl_id=%u", packd.sfl->index);
 		add_msg(msg_buf);	
 		delete_subflow(&packd.sfl->ft);
@@ -191,8 +184,7 @@ void handle_reset_input(){
 		return;
 	}
 
-	if(packd.sfl->act_state == CANDIDATE){
-
+	if(packd.sfl->act_state == CANDIDATE) {
 		if(packd.sfl == packd.sess->last_subflow){
 
 			packd.sess->ack_inf_flag = 1;
@@ -209,7 +201,7 @@ void handle_reset_input(){
 
 
 	//if active subflow: find candidate subflow in ESTABLISHED state that can take over
-	if(packd.sfl->act_state == ACTIVE){
+	if(packd.sfl->act_state == ACTIVE) {
 
 		if(packd.sfl->sess->sess_state < ESTABLISHED){
 			execute_sess_teardown(packd.sfl->sess);
@@ -225,7 +217,6 @@ void handle_reset_input(){
 	}
 
 	set_verdict(0,0,0);
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -234,18 +225,18 @@ void handle_reset_input(){
 void update_timestamp(){
 
 	uint32_t ts;		
-	if(packd.hook > 1 && packd.fwd_type == T_TO_M){
+	if(packd.hook > 1 && packd.fwd_type == T_TO_M) {
 
 		ts = get_timestamp(packd.buf+packd.pos_thead+20, packd.tcplen-20, 0);
 		if(sn_smaller(packd.sess->tsval, ts)) packd.sess->tsval = ts;
 		return;
 	}
-	if(packd.hook < 3 && packd.fwd_type == M_TO_T){
+
+	if(packd.hook < 3 && packd.fwd_type == M_TO_T) {
 
 		ts = get_timestamp(packd.buf+packd.pos_thead+20, packd.tcplen-20, 0);
 		if(sn_smaller(packd.sfl->tsecr, ts)) packd.sfl->tsecr = ts;
 	}
-	return;
 }
 
 
@@ -253,7 +244,7 @@ void update_timestamp(){
 //update_conn_level_data()
 //  updates connection level data
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void update_conn_level_data(){
+void update_conn_level_data() {
 
 	packd.sfl = NULL;
 
@@ -268,12 +259,14 @@ void update_conn_level_data(){
 
 	if(packd.ack == 1) {
 		dssopt_out.dan = packd.dan_curr_rem;
-		if( packd.sess->highest_dan_rem == packd.dan_curr_rem ) packd.dan_rem_state = 0;
-		else{
-			if( sn_smaller(packd.sess->highest_dan_rem, packd.dan_curr_rem) ){
+		if( packd.sess->highest_dan_rem == packd.dan_curr_rem ) {
+			packd.dan_rem_state = 0;
+		} else {
+			if( sn_smaller(packd.sess->highest_dan_rem, packd.dan_curr_rem) ) {
 				packd.dan_rem_state = 1;
+			} else {
+				packd.dan_rem_state = -1;
 			}
-			else packd.dan_rem_state = -1;
 		}
 	}
 
@@ -286,9 +279,6 @@ void update_conn_level_data(){
 
 	//update remote receive window
 	if( packd.sess->curr_window_loc < ntohs(packd.tcph->th_win)) packd.sess->curr_window_loc = ntohs(packd.tcph->th_win);
-
- 
-	return;
 }
 
 
@@ -309,133 +299,125 @@ void determine_thruway_subflow(){
 
 
 	//determine subflow for thruway based on cdsn_loc (i.e. dsn_switch)
-	if(packd.verdict == 1){
+	if(packd.verdict != 1)
+		return;
+
+	//set retransmit flag;
+	if( sn_smaller( packd.dsn_curr_loc, packd.sess->highest_dsn_loc)) packd.retransmit_flag = 1;
+
+	//determine gap between new packet and highest_dsn_loc
+	uint32_t gap = 0;
 
 
-		//set retransmit flag;
-		if( sn_smaller( packd.dsn_curr_loc, packd.sess->highest_dsn_loc)) packd.retransmit_flag = 1;
+	//At this point we assume that there is an active subflow
+	int update_highest = 0;
+	if(!packd.retransmit_flag) {
 
-		//determine gap between new packet and highest_dsn_loc
-		uint32_t gap = 0;
+		packd.sfl = packd.sess->act_subflow;
+		packd.paylen_curr = packd.paylen;
 
+		//increase sn/dsn_highest_loc with gap: 
+		//  this "reserves" gap-space on this subflow and keeps dsn->ssn mapping monotonous in case of out-of-order arrival
+		gap = packd.dsn_curr_loc - packd.sess->highest_dsn_loc;
+		update_highest = 1;
 
-		//At this point we assume that there is an active subflow
-		int update_highest = 0;
-		if(!packd.retransmit_flag){
+	} else {
 
-			packd.sfl = packd.sess->act_subflow;
-			packd.paylen_curr = packd.paylen;
+		//loop through all subflows and find DSN
+		struct subflow *sflx, *sfl_temp = NULL;	//sflx is current sfl, sfl_temp is NULL if not found	
+		uint32_t ssn_x;
+		uint32_t range_x;
 
-			//increase sn/dsn_highest_loc with gap: 
-			//  this "reserves" gap-space on this subflow and keeps dsn->ssn mapping monotonous in case of out-of-order arrival
-			gap = packd.dsn_curr_loc - packd.sess->highest_dsn_loc;
-			update_highest = 1;
+		int i = 0;
+		while(i< packd.sess->pA_sflows.number && !sfl_temp) {//terminates at max SFL or when sfl found
 
-		}
-		else{
+			sflx = (struct subflow*) (*(packd.sess->pA_sflows.pnts + i));
+			find_entry_dsn_retransmit(sflx->map_send, packd.dsn_curr_loc, &sfl_temp, &ssn_x, &range_x);
+			i++;
+		}	
 
-			//loop through all subflows and find DSN
-			struct subflow *sflx, *sfl_temp = NULL;	//sflx is current sfl, sfl_temp is NULL if not found	
-			uint32_t ssn_x;
-			uint32_t range_x;
+		//find dsn in session send table: If not found, drop packet
+		//find_entry_dsn_retransmit(packd.sess->map_send, packd.dsn_curr_loc, &sfl_temp, &ssn_x, &range_x);
 
-			int i = 0;
-			while(i< packd.sess->pA_sflows.number && !sfl_temp){//terminates at max SFL or when sfl found
+		//sfl was found
+		if(sfl_temp) {
 
-				sflx = (struct subflow*) (*(packd.sess->pA_sflows.pnts + i));
-				find_entry_dsn_retransmit(sflx->map_send, packd.dsn_curr_loc, &sfl_temp, &ssn_x, &range_x);
-				i++;
-			}	
+			//check if subflow really exists
+			struct subflow_pnt *sfl_pnt;
+			HASH_FIND(hh, sfl_pnt_hash, &sfl_temp, sizeof(struct subflow_pnt*), sfl_pnt);
+			if(sfl_pnt != NULL && sfl_temp->tcp_state == ESTABLISHED) {//ship on old subflow
 
-			//find dsn in session send table: If not found, drop packet
-			//find_entry_dsn_retransmit(packd.sess->map_send, packd.dsn_curr_loc, &sfl_temp, &ssn_x, &range_x);
-
-			//sfl was found
-			if(sfl_temp){
-
-				//check if subflow really exists
-				struct subflow_pnt *sfl_pnt;
-				HASH_FIND(hh, sfl_pnt_hash, &sfl_temp, sizeof(struct subflow_pnt*), sfl_pnt);
-				if(sfl_pnt != NULL && sfl_temp->tcp_state == ESTABLISHED) {//ship on old subflow
-
-					packd.sfl = sfl_temp;
-					if(packd.sfl->broken){
-
-						set_verdict(0,0,0);
-						return;
-					}
-	
-					packd.ssn_curr_loc = ssn_x;
-
-					//in case paylen has to be reduced
-					packd.paylen_curr = packd.paylen;
-					if( range_x < (uint32_t) packd.paylen ) \
-						packd.paylen_curr = (uint16_t) range_x;
-
-				}
-				else sfl_temp = NULL;
-			}
-			if(!sfl_temp){//if subflow not found, ship it on active subflow
-
-				packd.sfl = packd.sess->act_subflow;
-
-				if(packd.sfl == NULL || packd.sfl->broken){
+				packd.sfl = sfl_temp;
+				if(packd.sfl->broken) {
 
 					set_verdict(0,0,0);
 					return;
 				}
-	
+
+				packd.ssn_curr_loc = ssn_x;
+
+				//in case paylen has to be reduced
 				packd.paylen_curr = packd.paylen;
-				gap = 0;
-				update_highest = 1;
+				if( range_x < (uint32_t) packd.paylen )
+					packd.paylen_curr = (uint16_t) range_x;
 
+			} else {
+				sfl_temp = NULL;
+			}
+		}
+		if(!sfl_temp) {//if subflow not found, ship it on active subflow
 
+			packd.sfl = packd.sess->act_subflow;
+
+			if(packd.sfl == NULL || packd.sfl->broken){
+
+				set_verdict(0,0,0);
+				return;
 			}
 
-
-		}//end if(!retransmitflag)
-
-		if(update_highest){
-
-			packd.ssn_curr_loc = packd.sfl->highest_sn_loc + gap;
-
-			uint32_t dsn = packd.sess->highest_dsn_loc;
-			if(packd.retransmit_flag) dsn = packd.dsn_curr_loc;
-
-			//enter packet into session map
-			// reserve entire range from last highest to new highest, i.e. including gap	
-			enter_dsn_packet_on_top(
-				packd.sfl->map_send, 
-				packd.sfl,
-				dsn,//packd.sess->highest_dsn_loc, 
-				packd.sfl->highest_sn_loc,
-				packd.paylen + gap);
-
-			delete_below_dsn(packd.sfl->map_send,
-				packd.sfl->map_send->top->dsn +packd.sfl->map_send->top->range - 1\
-				- (packd.sess->curr_window_rem<<packd.sess->scaling_factor_rem) );
-
-
-			//update sn/dsn_highest_loc
-			//Note: FIN byte enters highest_dsn_loc but not highest_sn_loc
-			packd.sfl->highest_sn_loc = packd.ssn_curr_loc + packd.paylen_curr;
-			if( sn_smaller(packd.sess->highest_dsn_loc, packd.dsn_curr_loc + packd.paylen_curr + packd.fin )) \
-					packd.sess->highest_dsn_loc = packd.dsn_curr_loc + packd.paylen_curr + packd.fin;//may not be the case for cross-sfl retransmissions
+			packd.paylen_curr = packd.paylen;
+			gap = 0;
+			update_highest = 1;
 		}
+	}//end if(!retransmitflag)
+
+	if(update_highest) {
+
+		packd.ssn_curr_loc = packd.sfl->highest_sn_loc + gap;
+
+		uint32_t dsn = packd.sess->highest_dsn_loc;
+		if(packd.retransmit_flag) dsn = packd.dsn_curr_loc;
+
+		//enter packet into session map
+		// reserve entire range from last highest to new highest, i.e. including gap	
+		enter_dsn_packet_on_top(
+			packd.sfl->map_send, 
+			packd.sfl,
+			dsn,//packd.sess->highest_dsn_loc, 
+			packd.sfl->highest_sn_loc,
+			packd.paylen + gap);
+
+		delete_below_dsn(packd.sfl->map_send,
+			packd.sfl->map_send->top->dsn +packd.sfl->map_send->top->range - 1\
+			- (packd.sess->curr_window_rem<<packd.sess->scaling_factor_rem) );
 
 
-		packd.sfl->offset_loc = packd.dsn_curr_loc - packd.ssn_curr_loc;
+		//update sn/dsn_highest_loc
+		//Note: FIN byte enters highest_dsn_loc but not highest_sn_loc
+		packd.sfl->highest_sn_loc = packd.ssn_curr_loc + packd.paylen_curr;
+		if( sn_smaller(packd.sess->highest_dsn_loc, packd.dsn_curr_loc + packd.paylen_curr + packd.fin )) \
+				packd.sess->highest_dsn_loc = packd.dsn_curr_loc + packd.paylen_curr + packd.fin;//may not be the case for cross-sfl retransmissions
+	}
 
 
-	}//end if verdict == 1
-	return;
+	packd.sfl->offset_loc = packd.dsn_curr_loc - packd.ssn_curr_loc;
 }			
 			
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void find_side_acks()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void find_side_acks(){
+void find_side_acks() {
 
 	packd.sess->pA_sflows_data.number = 0;//reset pointer array
 
@@ -449,21 +431,23 @@ void find_side_acks(){
 
 	//update SAN on all subflows that have sent packets
 	// and add to pA_sflows_data
-	for(i=0; i< packd.sess->pA_sflows.number; i++){
+	for(i=0; i< packd.sess->pA_sflows.number; i++) {
 
 		sfl_ack = (struct subflow*) (*(packd.sess->pA_sflows.pnts + i));
 		
-		if(sfl_ack != NULL &&  !sfl_ack->broken && sfl_ack->tcp_state >= ESTABLISHED && (sfl_ack->tcp_state <= CLOSE_WAIT || packd.sess->sess_state > ESTABLISHED)){
+		if(sfl_ack != NULL &&  !sfl_ack->broken && sfl_ack->tcp_state >= ESTABLISHED &&
+				(sfl_ack->tcp_state <= CLOSE_WAIT || packd.sess->sess_state > ESTABLISHED) ) {
 
 			if(sfl_ack->map_recv->bot) packd.sack_in[0] = sfl_ack->map_recv->bot->dsn;
 			else packd.sack_in[0] = packd.sack_in[1];
 
 			outcome = 1;
 			sfl_ack->sack_sfl_start = 1;
-			if(project_sack_space( sfl_ack->map_recv, packd.nb_sack_in, packd.sack_in, &sfl_ack->nb_sack_sfl, sfl_ack->sack_sfl, sfl_ack->highest_an_rem-1, 1)){
+			if(project_sack_space( sfl_ack->map_recv, packd.nb_sack_in, packd.sack_in,
+						&sfl_ack->nb_sack_sfl, sfl_ack->sack_sfl, sfl_ack->highest_an_rem-1, 1)) {
 
 				//check if SSN space is contiguous
-				if(sn_smaller_equal(sfl_ack->sack_sfl[0], sfl_ack->highest_an_rem)){
+				if(sn_smaller_equal(sfl_ack->sack_sfl[0], sfl_ack->highest_an_rem)) {
 
 					sfl_ack->curr_an_rem = sfl_ack->sack_sfl[1]+1;
 					
@@ -477,37 +461,32 @@ void find_side_acks(){
 					}
 					sfl_ack->sack_sfl_start = 1;
 
-				}
-				else{//SSN space not contiguous
+				} else {//SSN space not contiguous
 
 					sfl_ack->curr_an_rem = sfl_ack->highest_an_rem;
 					sfl_ack->sack_sfl_start = 0;//first entry in sack_sfl is already a sack entry
 				}
 
-			}
-			else {//not mapping found
+			} else {//not mapping found
 				outcome = -1;
 				sfl_ack->curr_an_rem = sfl_ack->highest_an_rem;
 			}
 
-			if(sn_smaller(sfl_ack->highest_sn_rem, sfl_ack->highest_an_rem)){
+			if(sn_smaller(sfl_ack->highest_sn_rem, sfl_ack->highest_an_rem)) {
 
 				sfl_ack->highest_an_rem = sfl_ack->highest_sn_rem;
 
 			}
 
 			//SAN hits gap, SAN is old or SAN is forced (ack_state == 1)
-			if(outcome == 2 || sfl_ack->ack_state){
-
+			if(outcome == 2 || sfl_ack->ack_state) {
 				add_pnt_pA(&packd.sess->pA_sflows_data, sfl_ack);
 				sfl_ack->ack_state = 0;
 			}
 
 		}
 	}
-	return;
 }
-
 
 
 
@@ -516,7 +495,7 @@ void find_side_acks(){
 //  returns 0 if packet terminates here
 //  if the thruway does not hold a payload packet, a side ack is sent on the thruway
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void update_thruway_subflow(){
+void update_thruway_subflow() {
 
 	//create a thruway in case there is no FIN and no payload; if not possible drop packet
 	
@@ -524,31 +503,25 @@ void update_thruway_subflow(){
 		packd.sfl = packd.sess->act_subflow;
 		packd.sfl->ack_state = 0;
 
-		if(packd.sfl->broken){
+		if(packd.sfl->broken) {
 			set_verdict(0,0,0);
 			return;
 		}		
 		packd.ssn_curr_loc = packd.sfl->highest_sn_loc;
 		packd.verdict = 1;//update
-	}
-	else{//put the first side ACK onto thruway
+	} else {//put the first side ACK onto thruway
 
 		packd.sfl = (struct subflow*) (*(packd.sess->pA_sflows_data.pnts));
 		packd.ssn_curr_loc = packd.sfl->highest_sn_loc;
 		packd.verdict = 1;//update
 	}
-
-
-	return;
-
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //send_side_acks()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void send_side_acks(){
-
+void send_side_acks() {
 
 	//send acks on the various subflows, except main subflow
 	dssopt_out.Mflag = 0;
@@ -556,16 +529,12 @@ void send_side_acks(){
 	//first we have to copy the tcp option header of the packet
 	if(! prepare_top_side_ack()) return;
 	
-	
-
 	int i;
 	struct subflow *sfl_ack;
-	for(i=0; i<packd.sess->pA_sflows_data.number; i++){
+	for(i=0; i<packd.sess->pA_sflows_data.number; i++) {
 
 		sfl_ack = (struct subflow*) (*(packd.sess->pA_sflows_data.pnts + i));
-		if( sfl_ack != packd.sfl ){
-
-
+		if( sfl_ack != packd.sfl ) {
 			send_traffic_ack(sfl_ack);
 
 			if(PRINT_FILE) load_print_line(packd.id, packd.hook, packd.sess->index, sfl_ack->index, 
@@ -583,14 +552,14 @@ void send_side_acks(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //set_dss_and_prio()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void set_dss_and_prio(){
+void set_dss_and_prio() {
 
 	//*****THRUWAY MANAGEMENT: ADD DSN + MP_PRIO******
 	
 	int demand_dss = (packd.paylen > 0 || packd.fin == 1 || packd.sess->sess_state > ESTABLISHED || packd.ack == 1)? 18:0;
 
 	//check if enough room
-	if( demand_dss + packd.tcp_opt_len > 40 ){
+	if( demand_dss + packd.tcp_opt_len > 40 ) {
 
 		//erase some tcp options here!!!
 		//to be done later
@@ -598,7 +567,7 @@ void set_dss_and_prio(){
 	}
 
 	packd.mptcp_opt_appended = 0;
-	if(demand_dss>0){
+	if(demand_dss>0) {
 	
 		dssopt_out.present = 1;
 		dssopt_out.Mflag = 0;
@@ -624,7 +593,7 @@ void set_dss_and_prio(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //update_packet_output()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void update_packet_output(){
+void update_packet_output() {
 
 	packd.tcph->th_seq = htonl( packd.ssn_curr_loc );	
 
@@ -687,16 +656,13 @@ void update_packet_output(){
 
 		if(PRINT_TABLE) load_print_table(packd.id, packd.hook, packd.sfl);
 	}
-
-	return;
-
 }//end update_packet
 	
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //update_subflow_level_data()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void update_subflow_level_data(){
+void update_subflow_level_data() {
 
 
 	//update remote receive window
@@ -710,40 +676,33 @@ void update_subflow_level_data(){
 	parse_compact_copy_TCP_options(packd.buf+packd.pos_thead+20, packd.tcplen-20);
 
 	packd.san_curr_loc = ntohl(packd.tcph->th_ack);//which may be zero
-	if(packd.ack == 1){
-
-		//extract sack
-		packd.nb_sack_in = 0;
-		if(packd.sfl->sack_flag) extract_sack_blocks(packd.buf + packd.pos_thead + 20, packd.tcplen-20, &packd.nb_sack_in, packd.sack_in, 0);	
-		packd.nb_sack_in++;//to account for the lowest entry which is always there
-
-
-		packd.sack_in[0] = packd.sfl->isn_loc;
-		packd.sack_in[1] = packd.san_curr_loc-1;
-
-		if(project_sack_space( packd.sfl->map_send, packd.nb_sack_in, packd.sack_in, &packd.nb_sack_tcp, packd.sack_tcp, packd.sess->highest_dan_loc-1, 0)){
-
-
-			int i;
-
-		}
+	if(packd.ack != 1)
 		return;
-	}
-	return;
+
+	//extract sack
+	packd.nb_sack_in = 0;
+	if(packd.sfl->sack_flag) extract_sack_blocks(packd.buf + packd.pos_thead + 20, packd.tcplen-20, &packd.nb_sack_in, packd.sack_in, 0);	
+	packd.nb_sack_in++;//to account for the lowest entry which is always there
+
+
+	packd.sack_in[0] = packd.sfl->isn_loc;
+	packd.sack_in[1] = packd.san_curr_loc-1;
+
+	project_sack_space( packd.sfl->map_send, packd.nb_sack_in, packd.sack_in, &packd.nb_sack_tcp, packd.sack_tcp, packd.sess->highest_dan_loc-1, 0);
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //process_dss() 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void process_dss(){
+void process_dss() {
 
 	dssopt_in.present = analyze_MPdss(mptopt, packd.nb_mptcp_options);
 
 	packd.dan_curr_loc = 0;
-	if(dssopt_in.present){
+	if(dssopt_in.present) {
 
-		if( (dssopt_in.Mflag == 1 && packd.paylen > 0) || dssopt_in.Fflag){
+		if( (dssopt_in.Mflag == 1 && packd.paylen > 0) || dssopt_in.Fflag) {
 
 			if(dssopt_in.Fflag) {
 				packd.sess->ack_inf_flag = 0;
@@ -751,27 +710,27 @@ void process_dss(){
 
 			//enter packet into sfl ssn table
 			//Note: FIN byte does not go into table
-			int ret = enter_dsn_packet(packd.sfl->map_recv, packd.sfl, \
+			int ret = enter_dsn_packet(packd.sfl->map_recv, packd.sfl,
 				dssopt_in.dsn, dssopt_in.ssn + packd.sfl->isn_rem, dssopt_in.range - dssopt_in.Fflag);
 
 			//update bottom of table
 			//ATTENTION: permitting table size 4X window scaling factor (...+2)
-			delete_below_dsn(packd.sfl->map_recv, \
-				packd.sfl->map_recv->top->dsn + packd.sfl->map_recv->top->range \
+			delete_below_dsn(packd.sfl->map_recv,
+				packd.sfl->map_recv->top->dsn + packd.sfl->map_recv->top->range
 				- (packd.sess->curr_window_loc<<(packd.sess->scaling_factor_loc+2)) );
 
 			//update highest_dsn_rem if applicable
 			//Note: highest_dsn_rem includes FIN byte
-			if( sn_smaller(packd.sess->highest_dsn_rem, dssopt_in.dsn + dssopt_in.range) ) \
+			if( sn_smaller(packd.sess->highest_dsn_rem, dssopt_in.dsn + dssopt_in.range) )
 				packd.sess->highest_dsn_rem = dssopt_in.dsn + dssopt_in.range;
 
 		}
 
 		//uint32_t dan_loc = packd.sess->highest_dan_loc;//buffer dan_loc
-		if( dssopt_in.Aflag == 1){
+		if( dssopt_in.Aflag == 1) {
 
 			//update highest_dan_loc: if it has increased, verdict MUST be 1
-			if( sn_smaller(packd.sess->highest_dan_loc, dssopt_in.dan)){ 
+			if( sn_smaller(packd.sess->highest_dan_loc, dssopt_in.dan)) { 
 				packd.sess->last_dan_loc = packd.sess->highest_dan_loc;
 				packd.sess->highest_dan_loc = dssopt_in.dan;
 				
@@ -796,32 +755,26 @@ void process_dss(){
 
 	//inc nb_packets for subflow if this is a new transmission on this subflow
 	uint16_t load = packd.paylen + (dssopt_in.present && dssopt_in.Fflag) + packd.fin;
-	if( load > 0 &&  sn_smaller_equal(packd.ssn_curr_rem + load, packd.sfl->highest_an_rem) ){
+	if( load > 0 &&  sn_smaller_equal(packd.ssn_curr_rem + load, packd.sfl->highest_an_rem) ) {
 		//ack_state = 1: this means that this subflow needs to be acked
 		packd.sfl->ack_state = 1;
 	}
-
-	return;
 }
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //process_remove_addr() 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void process_remove_addr(){
-
+void process_remove_addr() {
 	unsigned char addr_id_rem;
-	if(analyze_MPremove_addr(mptopt, packd.nb_mptcp_options, &addr_id_rem) ){
+	if(analyze_MPremove_addr(mptopt, packd.nb_mptcp_options, &addr_id_rem) ) {
 
 		sprintf(msg_buf, "process_remove_addr: addr_id_rem=%u, sess_id=%u", (unsigned int) addr_id_rem, packd.sess->index);
 		add_msg(msg_buf);
 
 		check_for_remote_break(packd.sess, packd.sfl, addr_id_rem);
 		set_verdict(0,0,0);
-		return;
 	}
-
-	return;
 }
 
 
@@ -831,27 +784,23 @@ void process_remove_addr(){
 //process_prio() 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void process_prio(){
-
 	unsigned char *backup = malloc(sizeof(unsigned char));
 	*backup = 1;
 	unsigned char *addr_id_rem = malloc(sizeof(unsigned char));
 	int ret = analyze_MPprio(mptopt, packd.nb_mptcp_options, addr_id_rem, backup);
-	if(ret > 0){
+	if(ret > 0) {
 
 		//we currently only consider switch with backup = 0.
 
 		sprintf(msg_buf,"process_prio: MPprio found in sess_id=%u, sfl_id=%u, backup=%u", packd.sess->index, packd.sfl->index, *backup);
 		add_msg(msg_buf);
-		if(*backup == 0 && packd.sfl != packd.sess->act_subflow){
+		if(*backup == 0 && packd.sfl != packd.sess->act_subflow) {
 
 			switch_active_sfl(packd.sess, packd.sfl);
 
 		}
 		set_verdict(0,0,0);
-		return;
 	}
-	return;
-
 }
 
 
@@ -859,22 +808,21 @@ void process_prio(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //update_packet_input()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void update_packet_input(){
-
+void update_packet_input() {
 
 	//Define DSNrem
-	if(packd.paylen > 0){
+	if(packd.paylen > 0) {
 
 		//find DSN based on SSN on packet
-		if( find_DSN(&packd.dsn_curr_rem, packd.sfl->map_recv, packd.ssn_curr_rem ) == 0 ){
+		if( find_DSN(&packd.dsn_curr_rem, packd.sfl->map_recv, packd.ssn_curr_rem ) == 0 ) {
 
 			//THIS SHOULDN"T HAPPEN
-			if(dssopt_in.present){
+			if(dssopt_in.present) {
 				//enter packet into table
-				enter_dsn_packet(packd.sfl->map_recv, packd.sfl, \
+				enter_dsn_packet(packd.sfl->map_recv, packd.sfl,
 					dssopt_in.dsn, dssopt_in.ssn + packd.sfl->isn_rem, dssopt_in.range - dssopt_in.Fflag);
 
-				if( find_DSN(&packd.dsn_curr_rem, packd.sfl->map_recv, packd.ssn_curr_rem ) == 0 ){	
+				if( find_DSN(&packd.dsn_curr_rem, packd.sfl->map_recv, packd.ssn_curr_rem ) == 0 ) {
 					sprintf(msg_buf, "update_packet_input: DSN not found. sess_id=%u, sfl_id=%u, ssn_curr_rem=%lu", 
 						packd.sess->index, packd.sfl->index, (long unsigned int) packd.ssn_curr_rem);
 					add_msg(msg_buf);
@@ -896,12 +844,12 @@ void update_packet_input(){
 	//dan_curr_loc was provided by DAN on DSS.
 	//What do do if no DAN in DSS option?
 	if(packd.dan_curr_loc == 0) {
-
 		if(packd.ack) packd.dan_curr_loc = packd.sess->highest_dan_loc;
 	}
 	packd.tcph->th_seq = htonl( packd.dsn_curr_rem + packd.sess->offset_rem );
 
 	//adjust fin
+	//TODO: if/else odereing ?
 	if(dssopt_in.present && dssopt_in.Fflag) if(!packd.fin) packd.tcph->th_flags += 1;//add FIN if not set
 	else if(packd.fin) packd.tcph->th_flags -= 1;//remove FIN if set;
 
@@ -910,7 +858,7 @@ void update_packet_input(){
 	unsigned char start_index;
 	if(packd.ack == 1) {
 
-		if(packd.sess->ack_inf_flag){
+		if(packd.sess->ack_inf_flag) {
 
 
 			//start_index: 0 means sack_tcp[0-1] has gap to largest tcp ack and becomes sack block
@@ -929,7 +877,7 @@ void update_packet_input(){
 			}	
 
 			packd.tcph->th_ack = htonl( dan + packd.sess->offset_loc);
-			if(packd.nb_sack_tcp > 1 || (start_index == 0 && packd.nb_sack_tcp == 1) ){
+			if(packd.nb_sack_tcp > 1 || (start_index == 0 && packd.nb_sack_tcp == 1) ) {
 				
 				//parse_compact_copy_TCP_options(packd.buf+packd.pos_thead+20, packd.tcplen-20);
 				uint16_t new_tcp_opt_len = packd.tcp_opt_len;
@@ -946,8 +894,7 @@ void update_packet_input(){
 				packd.tcp_opt_len = pad_options_buffer(packd.tcp_opt_buf, packd.tcp_opt_len);
 				create_new_packet(packd.tcp_opt_buf, packd.tcp_opt_len);
 			}
-		}
-		else{
+		} else {
 			packd.tcph->th_ack = htonl( packd.dan_curr_loc + packd.sess->offset_loc);
 		}	
 	}
@@ -981,48 +928,37 @@ void update_packet_input(){
 
 		if(PRINT_TABLE) load_print_table(packd.id, packd.hook, packd.sfl);
 	}
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //update_subflow_control_plane()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int update_subflow_control_plane(){
-
-
-	if( (packd.sfl->tcp_state == ESTABLISHED && packd.fin) || \
-	    (packd.sfl->tcp_state > ESTABLISHED && packd.sfl->act_state == CANDIDATE) ) set_verdict(0,0,0);
+int update_subflow_control_plane() {
+	if( (packd.sfl->tcp_state == ESTABLISHED && packd.fin) ||
+	    (packd.sfl->tcp_state > ESTABLISHED && packd.sfl->act_state == CANDIDATE) )
+		set_verdict(0,0,0);
 
 
 	//Loop through tcp states for candidate subflow
 	switch(packd.sfl->tcp_state){
 	case ESTABLISHED:
 		return subflow_established();
-		break;
 	case CLOSE_WAIT:
 		return subflow_close_wait();
-		break;
 	case SYN_SENT:
 		return subflow_syn_sent();	
-		break;
 	case SYN_REC:
 		return subflow_syn_received();
-		break;
 	case FIN_WAIT_1:
 		return subflow_fin_wait_1();
-		break;
 	case FIN_WAIT_2:
 		return subflow_fin_wait_2();
-		break;
 	case CLOSING:
 		return subflow_closing();
-		break;
 	case TIME_WAIT:
 		break;
 	case LAST_ACK:
 		return subflow_last_ack();
-		break;
 	}//end switch sfl->tcp_state
 	return 0;	
 }
@@ -1030,7 +966,7 @@ int update_subflow_control_plane(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //update_packet_input()
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int update_session_control_plane(){
+int update_session_control_plane() {
 
 	size_t init_sess_state = packd.sess->sess_state;
 	int ret;
@@ -1092,8 +1028,7 @@ int update_session_control_plane(){
 //int mangle_packet()
 // Initiates all packet processing and mangling
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int mangle_packet(){
-
+int mangle_packet() {
 
 	if(packd.nb_mptcp_options > 0){
 
@@ -1115,7 +1050,7 @@ int mangle_packet(){
 	// 
 	//handles RSTs send by tcp
 	//sess can be NULL
-	if(packd.rst == 1){
+	if(packd.rst == 1) {
 
 		//handle all other RSTs
 		if(packd.hook < 3 && packd.fwd_type == M_TO_T) handle_reset_input();//sent by other MPTCP host
@@ -1126,7 +1061,7 @@ int mangle_packet(){
 	//*****SESSION ESTABLISHMENT******
 	//Sess = NULL && SYN only: contemplate session creation or subflow creation
 	//   Evaluates MP_CAP or MP_JOIN
-	if(packd.sess == NULL){
+	if(packd.sess == NULL) {
 
 		if( packd.syn == 1 && packd.ack == 0) {
 
@@ -1136,24 +1071,23 @@ int mangle_packet(){
 			set_verdict(1,0,0);
 			return 0;
 		}
-	}
-	else{//generic features if session exists
+	} else {//generic features if session exists
 
 		if(packd.sess->timestamp_flag) update_timestamp();
 
 	}
 
 	//*****DATA-PLANE MANAGEMENT******
-	if(packd.sess->sess_state >= ESTABLISHED && packd.sess->sess_state <= TIME_WAIT){
+	if(packd.sess->sess_state >= ESTABLISHED && packd.sess->sess_state <= TIME_WAIT) {
 
-		if(packd.hook > 1 && packd.fwd_type == T_TO_M){
+		if(packd.hook > 1 && packd.fwd_type == T_TO_M) {
 
 			update_conn_level_data();
 			determine_thruway_subflow();//sets verdict
 
 			//*****SIDE ACK MANAGEMENT******
 			//packet is sent on packd.sfl, which may be last or active
-			if(packd.ack == 1){
+			if(packd.ack == 1) {
 			
 				//determine side acks and update SANs for them
 				find_side_acks();
@@ -1174,8 +1108,7 @@ int mangle_packet(){
 
 			update_packet_output();
 
-		}
-		else if(packd.hook < 3 && packd.fwd_type == M_TO_T){//packd.hook == 1
+		} else if(packd.hook < 3 && packd.fwd_type == M_TO_T) {//packd.hook == 1
 
 			if(packd.sfl->broken) {
 				set_verdict(0,0,0);
@@ -1183,7 +1116,7 @@ int mangle_packet(){
 			}
 
 			packd.verdict = 0;
-			if(packd.sfl->tcp_state >= ESTABLISHED){
+			if(packd.sfl->tcp_state >= ESTABLISHED) {
 				update_subflow_level_data();
 				packd.verdict = 1;//packd.sess->sent_state;
 			
@@ -1206,11 +1139,11 @@ int mangle_packet(){
 
 	//*****CONTROL-PLANE MANAGEMENT******
 	//Subflow control plane: only for INPUT (hook = 1) && CANDIDATE sfls and when session established
-	if(packd.hook<3 && packd.fwd_type == M_TO_T && packd.sess->sess_state >= ESTABLISHED) update_subflow_control_plane();
+	if(packd.hook<3 && packd.fwd_type == M_TO_T && packd.sess->sess_state >= ESTABLISHED)
+		update_subflow_control_plane();
 
 	//Session control plane
 	return update_session_control_plane();
 
 }
-
 

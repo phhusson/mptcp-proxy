@@ -25,8 +25,7 @@ struct print_msg_array prt_msg_array;
 //sn smaller
 // returns 1 if a "<" b
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline int sn_smaller(uint32_t a, uint32_t b){ return ((a-b) > (b-a));}
-
+inline int sn_smaller(uint32_t a, uint32_t b) { return ((a-b) > (b-a));}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //sn smaller_equal
@@ -39,7 +38,6 @@ inline int sn_smaller_equal(uint32_t a, uint32_t b){ return ((a-b) >= (b-a));}
 //translate_SM_state
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void translate_SM_state(int state_nb, char *state_str){
-
 	switch(state_nb){
 
  	case CLOSED: strcpy(state_str,"CLOSED"); break;
@@ -67,7 +65,6 @@ void translate_SM_state(int state_nb, char *state_str){
 //translate_event_state
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void translate_event_state(int event_nb, char *state_str){
-
 	switch(event_nb){
  	case RETRANSMIT: strcpy(state_str,"RETRANSMIT"); break;
 	case SESS_BREAK: strcpy(state_str,"SESS_BREAK"); break;
@@ -81,19 +78,16 @@ void translate_event_state(int event_nb, char *state_str){
 }
 
 
-
-
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //handle_error
 // Prints out a string and exits
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void handle_error(char *message, int exit_flag){
+inline void handle_error(char *message, int exit_flag) {
 	printf("%s\n", message);
 	if(exit_flag){
 		printf("exit set\n");
 		 exit(1);	
 	}
-	return;
 }
 
 
@@ -101,10 +95,8 @@ inline void handle_error(char *message, int exit_flag){
 //print_msg
 // Prints message
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void print_msg(char *msg){
-
+inline void print_msg(char *msg) {
 	printf("%s\n", msg);
-	return;
 }
 
 
@@ -113,21 +105,17 @@ inline void print_msg(char *msg){
 //print_buffer
 // Prints out a string and exits
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void print_buffer(unsigned char *buf, uint16_t len, int hex_flag){
-	
+inline void print_buffer(unsigned char *buf, uint16_t len, int hex_flag) {
 	int i;
-	for(i=0;i<len;i++){
-
-		if(hex_flag){
+	for(i=0;i<len;i++) {
+		if(hex_flag) {
 			printf("%x.", buf[i]);
 			if(i%4 == 3) printf(" ");
-		}
-		else{
+		} else {
 			printf("%u.", buf[i]);
 			if(i%4 == 3) printf(" ");
 		}
 	}
-	return;
 }
 
 
@@ -135,26 +123,22 @@ inline void print_buffer(unsigned char *buf, uint16_t len, int hex_flag){
 //sprint_buffer
 // Prints buffer to string
 //++++++++++++++++++++++++++++++++++++++++++++++++
-extern inline void sprint_buffer(unsigned char *buf_in, char *str_out, uint16_t len, int hex_flag){
-	
+extern inline void sprint_buffer(unsigned char *buf_in, char *str_out, uint16_t len, int hex_flag) {
 	int i;
 	
 	str_out[0] = '\0';
 	char buf[5];
-	for(i=0;i<len;i++){
-
+	for(i=0;i<len;i++) {
 		if(hex_flag){
 			sprintf(buf, "%x.", buf_in[i]);
 			strcat(str_out, buf);
 			if(i%4 == 3) strcat(str_out," ");
-		}
-		else{
+		} else {
 			sprintf(buf, "%u.", buf_in[i]);
 			strcat(str_out, buf);
 			if(i%4 == 3) strcat(str_out," ");
 		}
 	}
-	return;
 }
 
 
@@ -163,7 +147,7 @@ extern inline void sprint_buffer(unsigned char *buf_in, char *str_out, uint16_t 
 //void init_msg_data();
 // Initializes msg printing
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void init_msg_data(){
+void init_msg_data() {
 
 	gettimeofday(&prt_msg_array.start, NULL);
 	prt_msg_array.prt_msgs = malloc(MAX_MSG_LINES * sizeof(struct print_msg*));//creates an array of pointers to msgs
@@ -174,8 +158,6 @@ void init_msg_data(){
 	for(i=0;i<MAX_MSG_LINES; i++) {
 		prt_msg_array.prt_msgs[i] = malloc(sizeof(struct print_msg));
 	}
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
@@ -183,14 +165,13 @@ void init_msg_data(){
 //Adds msg to msg array
 //++++++++++++++++++++++++++++++++++++++++++++++++
 void add_msg(char *msg){
-
-
 	prt_msg_array.prt_msgs[prt_msg_array.curr_msg_index]->index = prt_msg_array.nmb_msg;
 	gettimeofday(&prt_msg_array.prt_msgs[prt_msg_array.curr_msg_index]->now, NULL);
 	 
 
-	if(strlen(msg) < MAX_MSG_LENGTH) strncpy(prt_msg_array.prt_msgs[prt_msg_array.curr_msg_index]->msg, msg, strlen(msg)+1);
-	else{
+	if(strlen(msg) < MAX_MSG_LENGTH) {
+		strncpy(prt_msg_array.prt_msgs[prt_msg_array.curr_msg_index]->msg, msg, strlen(msg)+1);
+	} else {
 		strncpy(prt_msg_array.prt_msgs[prt_msg_array.curr_msg_index]->msg, msg, MAX_MSG_LENGTH);
 		prt_msg_array.prt_msgs[prt_msg_array.curr_msg_index]->msg[MAX_MSG_LENGTH] = '\0';
 	}
@@ -199,7 +180,6 @@ void add_msg(char *msg){
 	prt_msg_array.nmb_msg++;//with natural overflow
 	prt_msg_array.curr_msg_index++;
 	prt_msg_array.curr_msg_index %= MAX_MSG_LINES;//loops around
-	return;
 }
 
 
@@ -215,9 +195,8 @@ void terminate_msg_data(){
 	int i;
 	struct print_msg *prt;
 	double dtime;
-	if(prt_msg_array.curr_msg_index < prt_msg_array.nmb_msg){//it has looped around yet
-		for(i=prt_msg_array.curr_msg_index; i<MAX_MSG_LINES;i++){
-
+	if(prt_msg_array.curr_msg_index < prt_msg_array.nmb_msg) {//it has looped around yet
+		for(i=prt_msg_array.curr_msg_index; i<MAX_MSG_LINES;i++) {
 			prt = prt_msg_array.prt_msgs[i];
 			double dtime = 1.0 * (prt->now.tv_sec - prt_msg_array.start.tv_sec) +  (prt->now.tv_usec - prt_msg_array.start.tv_usec)/1000000.0;
 	
@@ -225,15 +204,13 @@ void terminate_msg_data(){
 		}
 	}
 
-	for(i=0; i<prt_msg_array.curr_msg_index;i++){
-
+	for(i=0; i<prt_msg_array.curr_msg_index;i++) {
 		prt = prt_msg_array.prt_msgs[i];
 		double dtime = 1.0 * (prt->now.tv_sec - prt_msg_array.start.tv_sec) +  (prt->now.tv_usec - prt_msg_array.start.tv_usec)/1000000.0;
 	
 		fprintf(prt_msg_array.file_msg,"%u\t%f\t%s\n", prt->index, dtime, prt->msg);
 	}
 	fclose(prt_msg_array.file_msg);
-	return;
 }
 
 
@@ -241,7 +218,7 @@ void terminate_msg_data(){
 //void init_print_data();
 // Initializes data printing
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void init_print_data(){
+void init_print_data() {
 
 	gettimeofday(&prt_data.start, NULL);
 	prt_data.print_line_array = malloc(MAX_PRINT_LINES * sizeof(struct print_line*));//creates an array of pointers to printlines
@@ -256,7 +233,6 @@ void init_print_data(){
 		if(PRINT_TABLE) prt_data.print_table_array[i] = malloc(sizeof(struct print_table));
 
 	}
-
 }
 
 
@@ -269,7 +245,7 @@ void load_print_line(uint32_t id, size_t hook,
 			size_t sess_id, size_t sfl_id, 
 			int rex, uint32_t len, unsigned char flags, 
 			uint32_t ssn, uint32_t san, uint32_t dsn, uint32_t dan, 
-			unsigned char nb_sack_in, uint32_t *sack_in, unsigned char nb_sack_out, uint32_t *sack_out, int verdict){
+			unsigned char nb_sack_in, uint32_t *sack_in, unsigned char nb_sack_out, uint32_t *sack_out, int verdict) {
 
 	if(prt_data.nmb_lines >= MAX_PRINT_LINES) return;
 
@@ -302,16 +278,12 @@ void load_print_line(uint32_t id, size_t hook,
 	packd.prt_line.nb_sack_out = nb_sack_out;
 
 	add_print_data();
-
-
-
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //void load_print_table();
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void load_print_table(uint32_t id, size_t hook, struct subflow *sfl){
+void load_print_table(uint32_t id, size_t hook, struct subflow *sfl) {
 
 	if(prt_data.nmb_tables >= MAX_PRINT_LINES) return;
 	if(sfl == NULL) return;
@@ -340,8 +312,7 @@ void load_print_table(uint32_t id, size_t hook, struct subflow *sfl){
 		ssn_offset = sfl->isn_loc;
 	}
 
-	while(e && j < 10){
-
+	while(e && j < 10) {
 		prt_data.print_table_array[i]->dsn[j] = e->dsn - dsn_offset;
 		prt_data.print_table_array[i]->ssn[j] = e->ssn - ssn_offset;
 		prt_data.print_table_array[i]->range[j] = e->range;
@@ -351,9 +322,6 @@ void load_print_table(uint32_t id, size_t hook, struct subflow *sfl){
 	prt_data.print_table_array[i]->nb_entries = j;
 
 	prt_data.nmb_tables++;
-	
-
-	return;
 }
 
 
@@ -361,7 +329,7 @@ void load_print_table(uint32_t id, size_t hook, struct subflow *sfl){
 //void add_print_data();
 // adds a print_line to print_data
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void add_print_data(){
+void add_print_data() {
 
 	if(!prt_data.do_print || prt_data.nmb_lines >= MAX_PRINT_LINES) return;
 
@@ -370,7 +338,6 @@ void add_print_data(){
 
 	prt_data.nmb_lines++;
 	if(prt_data.nmb_lines == MAX_PRINT_LINES) terminate_print_data();
-	return;
 }
 
 
@@ -380,7 +347,7 @@ void add_print_data(){
 //void terminate_print_data();
 // Prints print_line_array and closes file
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void terminate_print_data(){
+void terminate_print_data() {
 
 	sprintf(msg_buf, "terminate_print_data: number of lines=%u", prt_data.nmb_lines);
 	add_msg(msg_buf);
@@ -406,7 +373,7 @@ void terminate_print_data(){
 	int i;
 	struct print_line *prt;
 	double dtime;
-	for(i=0;i<prt_data.nmb_lines;i++){
+	for(i=0;i<prt_data.nmb_lines;i++) {
 
 		struct print_line *prt = prt_data.print_line_array[i];
 		double dtime = 1.0 * (prt->now.tv_sec - prt_data.start.tv_sec) +  (prt->now.tv_usec - prt_data.start.tv_usec)/1000000.0;
@@ -457,7 +424,7 @@ void terminate_print_data(){
 	}
 
 
-	if(PRINT_TABLE){
+	if(PRINT_TABLE) {
 
 		sprintf(msg_buf, "terminate_print_data: number of tables =%u", prt_data.nmb_tables);
 		add_msg(msg_buf);		
@@ -468,21 +435,20 @@ void terminate_print_data(){
 		fprintf(prt_data.file30,"id \thook \tsfl \n");
 
 		int i,j;
-		for(i=0; i<prt_data.nmb_tables; i++){
+		for(i=0; i<prt_data.nmb_tables; i++) {
 
 			struct print_table *prtt = prt_data.print_table_array[i];
 
-			if(prtt->hook == 1){ 			
+			if(prtt->hook == 1) {
 				fprintf(prt_data.file10,"%lu\t%d\t%u\t", (long unsigned int) prtt->id, prtt->hook, prtt->sfl_id);
 
-				for(j=0; j<prtt->nb_entries; j++){
+				for(j=0; j<prtt->nb_entries; j++) {
 					fprintf(prt_data.file10,"[%lu,%lu][%lu,%lu]\t", 
 					(long unsigned) prtt->dsn[j], (long unsigned) (prtt->dsn[j] + prtt->range[j] - 1),
 					(long unsigned) prtt->ssn[j], (long unsigned) (prtt->ssn[j] + prtt->range[j] - 1));
 				}					
 				fprintf(prt_data.file10,"\n");
-			}
-			else{ 			
+			} else{
 				fprintf(prt_data.file30,"%lu\t%d\t%u\t", (long unsigned int) prtt->id, prtt->hook, prtt->sfl_id);
 
 				for(j=0; j<prtt->nb_entries; j++){
@@ -492,8 +458,6 @@ void terminate_print_data(){
 				}					
 				fprintf(prt_data.file30,"\n");
 			}
-
-		
 		}
 	}
 
@@ -503,8 +467,6 @@ void terminate_print_data(){
 	fclose(prt_data.file3);
 	fclose(prt_data.file10);
 	fclose(prt_data.file30);
-
-	return;
 }
 
 
@@ -514,8 +476,7 @@ void terminate_print_data(){
 //void print_sack(uint32_t *sack, unsigned char nb_sack);
 // Prints sack array
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void print_sack(uint32_t *sack, unsigned char nb_sack){
-
+void print_sack(uint32_t *sack, unsigned char nb_sack) {
 	int i;
 	printf("print_sack:\n");
 	for(i=0;i<nb_sack;i++)	printf("[%lu, %lu] ", (long unsigned) sack[(i<<1)], (long unsigned) sack[(i<<1)+1]);
@@ -527,8 +488,7 @@ void print_sack(uint32_t *sack, unsigned char nb_sack){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: get_rand: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline uint32_t get_rand(){
-
+inline uint32_t get_rand() {
 	uint32_t nmb;
 	nmb = rand();
 	nmb += ( (rand()%2) <<31);
@@ -539,8 +499,7 @@ inline uint32_t get_rand(){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create_key: 
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void create_key(uint32_t *key){
-		
+inline void create_key(uint32_t *key) {
 	*key = get_rand();
 	*(key + 1) = get_rand();
 	return;
@@ -550,16 +509,13 @@ inline void create_key(uint32_t *key){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create IDSN: 32bit trunc of SHA1(key)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void create_idsn_token(uint32_t * const key, uint32_t *idsn, uint32_t *token){
-
+inline void create_idsn_token(uint32_t * const key, uint32_t *idsn, uint32_t *token) {
 	struct sha1_ctx ctx;
 	uint32_t resblock[5];
 	uint32_t *respnt = (uint32_t*) resblock;
 	respnt = (uint32_t *) sha1_buffer ( (const unsigned char *) key, 8, (unsigned char *) resblock);
 	*token = (resblock[0]);
 	*idsn = ntohl( *( resblock+4) );
-
-	return;
 }
 
 
@@ -567,8 +523,7 @@ inline void create_idsn_token(uint32_t * const key, uint32_t *idsn, uint32_t *to
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create_mac: 20B mac of key = keyA || keyB and msg = R_A || R_B
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void create_mac(uint32_t *keyA, uint32_t *keyB, uint32_t rand_nmb_A, uint32_t rand_nmb_B, uint32_t* mac){ 
-
+void create_mac(uint32_t *keyA, uint32_t *keyB, uint32_t rand_nmb_A, uint32_t rand_nmb_B, uint32_t* mac){  
 	uint32_t key[4];
 	memcpy(key, keyA, 8);
 	memcpy(key+2, keyB, 8);
@@ -577,24 +532,20 @@ void create_mac(uint32_t *keyA, uint32_t *keyB, uint32_t rand_nmb_A, uint32_t ra
 	msg[0] = rand_nmb_A;
 	msg[1] = rand_nmb_B;
 	hmac_sha1(key, 16, msg, 8, (void*) mac); 
-	return;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create Token
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline uint32_t create_token(uint32_t idsn){
-		
+inline uint32_t create_token(uint32_t idsn) {
 	//Token is derived from IDSN
 	return idsn;
-
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: create ISSN
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline uint32_t create_issn(){
-		
+inline uint32_t create_issn() {
 	//since rand() only creates a positive long int, 
 	// it covers only 31 bits.
 	// therefore we add a random bit at the 32 position
@@ -606,16 +557,12 @@ inline uint32_t create_issn(){
 }
 
 
-
-
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: convert IP address from uint32_t to char
 //  IP address must be in host format
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void printIPaddr(uint32_t ipaddr){
-		
+inline void printIPaddr(uint32_t ipaddr) {
 	printf("%d.%d.%d.%d",(ipaddr>>24)&0xff,(ipaddr>>16)&0xff,(ipaddr>>8)&0xff,ipaddr&0xff);	
-	return;
 }
 
 
@@ -623,8 +570,7 @@ inline void printIPaddr(uint32_t ipaddr){
 //util: convert IP address from uint32_t to char
 //  IP address must be in host format
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void sprintIPaddr(char* buf, uint32_t ipaddr){
-		
+inline void sprintIPaddr(char* buf, uint32_t ipaddr) {
 	sprintf(buf, "%d.%d.%d.%d",(ipaddr>>24)&0xff,(ipaddr>>16)&0xff,(ipaddr>>8)&0xff,ipaddr&0xff);
 	return;
 }
@@ -632,8 +578,7 @@ inline void sprintIPaddr(char* buf, uint32_t ipaddr){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: printFourtuple
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void printFourtuple(struct fourtuple *ft){
-
+inline void printFourtuple(struct fourtuple *ft) {
 	printf("ipL=");
 	printIPaddr(ft->ip_loc);
 	printf(" ipR=");
@@ -646,8 +591,7 @@ inline void printFourtuple(struct fourtuple *ft){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: sprintFourtuple
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void sprintFourtuple(char* buf, struct fourtuple *ft){
-
+inline void sprintFourtuple(char* buf, struct fourtuple *ft) {
 	char buf_loc[34];
 	char buf_rem[34];
 
@@ -655,24 +599,19 @@ inline void sprintFourtuple(char* buf, struct fourtuple *ft){
 	sprintIPaddr(buf_rem, ft->ip_rem);
 
 	sprintf(buf, "ipL=%s ipR=%s prtL=%u prtR=%u", buf_loc, buf_rem, ft->prt_loc, ft->prt_rem);
-	return;
-
 }
-
-
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: mirrorFourtuple: switches loc and rem
 //++++++++++++++++++++++++++++++++++++++++++++++++
-inline void mirrorFourtuple(struct fourtuple *ft){
+inline void mirrorFourtuple(struct fourtuple *ft) {
 	uint32_t ip_buf = ft->ip_loc;
 	uint16_t prt_buf = ft->prt_loc;
 	ft->ip_loc = ft->ip_rem;
 	ft->prt_loc = ft->prt_rem;
 	ft->ip_rem = ip_buf;
 	ft->prt_rem = prt_buf;
-	return;
 }
 
 
@@ -681,8 +620,7 @@ inline void mirrorFourtuple(struct fourtuple *ft){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: init_pA: Initializes pntArray
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void init_pA(struct pntArray *pa){
-
+void init_pA(struct pntArray *pa) {
 	pa->alloc = 10;
 	pa->pnts = malloc(pa->alloc * sizeof(void*));
 	pa->number = 0;
@@ -692,8 +630,7 @@ void init_pA(struct pntArray *pa){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: add_pnt_pA: Adds pointer to pntArray
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void add_pnt_pA(struct  pntArray *pa, void *pnt){
-
+void add_pnt_pA(struct  pntArray *pa, void *pnt) {
 	if(pa->number+1 >= pa->alloc){
 		pa->alloc+=10;
 		pa->pnts = realloc(pa->pnts, pa->alloc * sizeof(void*));
@@ -707,8 +644,7 @@ void add_pnt_pA(struct  pntArray *pa, void *pnt){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: write_index_pA: Writes to pnt to index in pntArray
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void write_pnt_pA(struct pntArray *pa, int index, void *pnt){
-
+void write_pnt_pA(struct pntArray *pa, int index, void *pnt) {
 	if(index >= pa->number || index < 0) return;
 	*(pa->pnts + index) = pnt;
 }
@@ -716,15 +652,14 @@ void write_pnt_pA(struct pntArray *pa, int index, void *pnt){
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: del_index_pA: Deletes pnt to index in pntArray and puts NULL in the spot
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void del_index_pA(struct pntArray *pa, int index){
-
+void del_index_pA(struct pntArray *pa, int index) {
 	if(index >= pa->number || index < 0) return;
+
 	int i;
 	for(i = index; i< pa->number-1; i++){
 		*(pa->pnts+i) = *(pa->pnts +i+1);
 	}
 	pa->number--;
-	return;
 
 }
 
@@ -732,8 +667,7 @@ void del_index_pA(struct pntArray *pa, int index){
 //util: get_index_pA: Gets index to pnt in pntArray 
 // -1 if not found
 //++++++++++++++++++++++++++++++++++++++++++++++++
-int get_index_pA(struct  pntArray *pa, void *pnt){
-
+int get_index_pA(struct  pntArray *pa, void *pnt) {
 	int i=0;
 	while(i < pa->number && ( *(pa->pnts+i) != pnt) ) i++;
 
@@ -746,36 +680,25 @@ int get_index_pA(struct  pntArray *pa, void *pnt){
 //util: get_pnt_pA: Gets pnt to index in anyArray 
 // NULL if not found
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void* get_pnt_pA(struct  pntArray *pa, int index){
-
+void* get_pnt_pA(struct  pntArray *pa, int index) {
 	if(index >= pa->number || index < 0) return NULL;
+
 	return *(pa->pnts+index);
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: del_pnt_pA: Deletes pnt from pntArray (if present)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void del_pnt_pA(struct pntArray *pa, void *pnt){
-
-	
+void del_pnt_pA(struct pntArray *pa, void *pnt) {
 	int index = get_index_pA(pa, pnt);
 	del_index_pA(pa, index);
 }
 
-
-
-
 //++++++++++++++++++++++++++++++++++++++++++++++++
 //util: clear_pA(index_pntArray* pa)
 //++++++++++++++++++++++++++++++++++++++++++++++++
-void clear_pA(struct  pntArray *pa){
-
+void clear_pA(struct  pntArray *pa) {
 	pa->number = 0;
 	free(pa->pnts);
 
 }
-
-
-
-
-

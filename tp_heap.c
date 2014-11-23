@@ -7,26 +7,23 @@
 #include "tp_heap.h"
 
 //returns 1 if ev1 occurred earlier than ev2, otherwise 0
-inline int earlier(struct tp_event *ev1, struct tp_event *ev2){
-
+inline int earlier(struct tp_event *ev1, struct tp_event *ev2) {
 	if(ev2 == NULL) return 0;
 	else if(ev1 == NULL) return 1; 
 
-	return ((1.0 * ((double)(ev2->time.tv_sec - ev1->time.tv_sec))\
+	return ((1.0 * ((double)(ev2->time.tv_sec - ev1->time.tv_sec))
 		 + ((double)(ev2->time.tv_usec - ev1->time.tv_usec))/1000000.0 ) > 0)? 1:0;
 }
 
-inline int is_due(struct tp_event *ev, struct timeval *tm){
-
+inline int is_due(struct tp_event *ev, struct timeval *tm) {
 	//retransmit time 
-	return ((1.0 * ((double)(tm->tv_sec - ev->time.tv_sec))\
+	return ((1.0 * ((double)(tm->tv_sec - ev->time.tv_sec))
 		 + ((double)(tm->tv_usec - ev->time.tv_usec))/1000000.0 ) > 0)? 1:0;
 }
 
 
 
 PriorityQueue Initialize(int MaxElements) {
- 
 	PriorityQueue H;
 	H = malloc(sizeof ( struct HeapStruct));
 	if (H == NULL) FatalError("PriorityQueue: Out of space!!!");
@@ -45,7 +42,6 @@ PriorityQueue Initialize(int MaxElements) {
 }
 
 void AddCapacity(PriorityQueue H, int Nb_add) {
-
   	//Buffer old element arrray pointer
 	ElementType *e_old = H->Elements;
 	int cap_old = H->Capacity;
@@ -61,7 +57,7 @@ void AddCapacity(PriorityQueue H, int Nb_add) {
 	H->Size = 0;
 
 	//copy over old elements to new elements
-	for(i = 0; i < cap_old + 1; i++){
+	for(i = 0; i < cap_old + 1; i++) {
 		if(e_old[i] != NULL) Insert(e_old[i], H);
 	}
 	//printf("AddCapacity: new capacity is now %d, size=%d\n", H->Capacity, H->Size);
@@ -74,14 +70,12 @@ void MakeEmpty(PriorityQueue H) {
 
 // H->Element[ 0 ] is a sentinel
 void Insert(ElementType X, PriorityQueue H) {
-
 	if (IsFull(H)) {
 		AddCapacity(H, HeapCapInc);
 	}
 
 //    for (i = ++H->Size; H->Elements[ i / 2 ] > X; i /= 2)
 //       H->Elements[ i ] = H->Elements[ i / 2 ];
-
  
 	int i;
 	for (i = ++H->Size; earlier(X, H->Elements[ i / 2 ]); i /= 2){
